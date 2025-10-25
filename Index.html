@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>מסע בין דפים ✨</title>
+  <!-- Google Fonts: Rubik Hebrew -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
+  <style>
+    /* ------------------ BASE ------------------ */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Rubik', Arial, sans-serif;
+      box-sizing: border-box;
+      background: linear-gradient(135deg, #f3d7ff 0%, #bae6ff 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #442d58;
+      direction: rtl;
+    }
+    body {
+      position: relative;
+      min-height: 100vh;
+    }
+    /* ------------------ SPARKLES ------------------ */
+    .sparkles {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .sparkle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: sparkle-move 7s linear infinite;
+      background: radial-gradient(circle, #fff 60%, #e6cfff 100%);
+      box-shadow: 0 0 18px 6px #fff8;
+      width: 8px;
+      height: 8px;
+    }
+    /* Sparkle Instances */
+    .sparkle:nth-child(1) { top:7%; left:14%; animation-delay:0s; }
+    .sparkle:nth-child(2) { top:85%; left:35%; animation-delay:2s; }
+    .sparkle:nth-child(3) { top:35%; left:75%; animation-delay:3s; }
+    .sparkle:nth-child(4) { top:55%; left:60%; animation-delay:1.5s; }
+    .sparkle:nth-child(5) { top:17%; left:85%; animation-delay:4s; }
+    .sparkle:nth-child(6) { top:70%; left:8%; animation-delay:6s; }
+    .sparkle:nth-child(7) { top:62%; left:48%; animation-delay:2.7s; }
+    .sparkle:nth-child(8) { top:23%; left:33%; animation-delay:5s; }
+    @keyframes sparkle-move {
+      0% { opacity:0.6; transform:scale(1) translateY(0);}
+      10% { opacity:1; transform:scale(1.3);}
+      50% { opacity:0.7; transform:scale(1.1) translateY(-10px);}
+      100% { opacity:0.3; transform:scale(0.9) translateY(0);}
+    }
+    /* ------------------ LAYOUT ------------------ */
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    .app-card {
+      background: rgba(255,255,255,0.35);
+      box-shadow: 0 8px 32px 0 rgba(80,50,130,0.08);
+      border-radius: 32px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(186,230,255,0.18);
+      padding: 28px 20px 22px 20px;
+      max-width: 370px;
+      width: 100%;
+      margin-top: 36px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+      animation: float-card 2.7s ease-in-out infinite alternate;
+    }
+    @keyframes float-card {
+      0% { transform: translateY(0);}
+      100% { transform: translateY(-12px);}
+    }
+    /* ------------------ AVATAR & TITLE ------------------ */
+    .avatar-title-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+      width: 100%;
+      justify-content: center;
+    }
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e3b3ff 0%, #b3eaff 100%);
+      box-shadow: 0 2px 16px #d1c4e980;
+      object-fit: cover;
+      border: 2.5px solid #f2e6ff;
+      position: relative;
+    }
+    .title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #7d4baf;
+      text-shadow: 0 2px 8px #fff8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .score-badge {
+      margin-right: 8px;
+      background: linear-gradient(90deg, #ffd3e6 0%, #ffe587 100%);
+      color: #6e5b30;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 14px;
+      padding: 4px 12px;
+      box-shadow: 0 2px 8px #ffe58770;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .score-badge .star {
+      font-size: 1.15em;
+      color: #ffd700;
+      text-shadow: 0 1px 6px #fff;
+      margin-left: 2px;
+      animation: star-pop 1.1s infinite alternate;
+    }
+    @keyframes star-pop {
+      0% { transform: scale(1);}
+      100% { transform: scale(1.18);}
+    }
+    /* ------------------ MAP SECTION ------------------ */
+    .map-area {
+      background: linear-gradient(135deg, #e7e2ff 0%, #d1f3ff 100%);
+      border-radius: 22px;
+      box-shadow: 0 2px 18px #c9c6e980;
+      padding: 18px 11px 10px 11px;
+      width: 90%;
+      margin: 0 auto 26px auto;
+      position: relative;
+      overflow: hidden;
+      min-height: 90px;
+    }
+    /* Fantasy icons */
+    .map-icons {
+      font-size: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      margin-bottom: 11px;
+      padding: 0 10px;
+    }
+    /* Glowing dotted path */
+    .map-path {
+      position: absolute;
+      left: 18px; right: 18px; bottom: 10px;
+      height: 12px;
+      width: calc(100% - 36px);
+      pointer-events: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #e1aaff 60%, #fff 100%);
+      box-shadow: 0 0 9px 2px #c77dff;
+      opacity: 0.8;
+      animation: dot-glow 2s infinite alternate;
+    }
+    .dot:nth-child(odd) { animation-delay: .5s;}
+    .dot:nth-child(even) { animation-delay: 1.2s;}
+    @keyframes dot-glow {
+      0% { box-shadow: 0 0 8px 1px #b08fff;}
+      100% { box-shadow: 0 0 16px 4px #fbb1ff;}
+    }
+    /* ------------------ BUTTONS ------------------ */
+    .main-buttons {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 12px;
+      align-items: stretch;
+    }
+    .btn {
+      font-family: inherit;
+      font-size: 1.08rem;
+      font-weight: 700;
+      border: none;
+      outline: none;
+      border-radius: 22px;
+      padding: 12px 0;
+      cursor: pointer;
+      box-shadow: 0 2px 16px #b7b8e980;
+      color: #fff;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      background-size: 200% 200%;
+      will-change: transform;
+      animation: btn-bounce 2.7s infinite alternate;
+    }
+    /* Button gradients */
+    .btn:nth-child(1) {
+      background: linear-gradient(100deg, #c47cff 0%, #8fe1ff 100%);
+      box-shadow: 0 2px 16px #b18cffc0;
+      animation-delay: 0s;
+    }
+    .btn:nth-child(2) {
+      background: linear-gradient(100deg, #ffb3de 0%, #ffd978 100%);
+      box-shadow: 0 2px 16px #ffc9d5c0;
+      animation-delay: .2s;
+    }
+    .btn:nth-child(3) {
+      background: linear-gradient(100deg, #b3ffd8 0%, #ffa7c7 100%);
+      box-shadow: 0 2px 16px #b3ffd8c0;
+      animation-delay: .4s;
+    }
+    @keyframes btn-bounce {
+      0% { transform: scale(1);}
+      70% { transform: scale(1.03);}
+      100% { transform: scale(1.08);}
+    }
+    .btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 1px 8px #b7b8e980;
+    }
+    /* ------------------ EVENT BANNER ------------------ */
+    .event-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100vw;
+      padding: 10px 0 10px 0;
+      background: linear-gradient(90deg, #debcff 0%, #bae6ff 100%);
+      box-shadow: 0 -2px 18px #c9c6e980;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.07rem;
+      color: #7d4baf;
+      letter-spacing: 1px;
+      z-index: 10;
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+      animation: banner-glow 2.2s infinite alternate;
+    }
+    @keyframes banner-glow {
+      0% { box-shadow: 0 -2px 18px #e7b3ff80;}
+      100% { box-shadow: 0 -4px 28px #b3eaff60;}
+    }
+    .event-banner .subtitle {
+      display: block;
+      font-size: 0.92rem;
+      color: #5a3080;
+      font-weight: 400;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+    /* ------------------ RESPONSIVE ------------------ */
+    @media (max-width: 500px) {
+      .app-card { max-width: 98vw; padding: 18px 6vw;}
+      .avatar-title-row { flex-direction: column; gap: 7px;}
+      .title { font-size: 1.2rem;}
+      .score-badge { font-size: 0.9rem; padding: 3px 8px;}
+      .map-area { min-height: 70px; padding: 10px 3px;}
+      .map-icons { font-size: 1.3rem; }
+      .main-buttons .btn { font-size: 0.97rem; padding: 10px 0;}
+    }
+    /* ------------------ EXTRAS & SUGGESTIONS ------------------
+      - For treasure chest: add a gentle shake or lid pop animation on hover.
+      - For multi-profile: stack avatars slightly with hover scale.
+    */
+    .btn.chest-btn {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn.chest-btn::after {
+      content: "🗝️";
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.2em;
+      animation: chest-key 2s infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes chest-key {
+      0% { transform: translateY(-50%) rotate(-5deg);}
+      100% { transform: translateY(-50%) rotate(10deg);}
+    }
+    /* Example multi-profile avatars (not shown, but suggested):
+    .avatar-stack { display: flex; }
+    .avatar-stack .avatar { margin-right: -22px; box-shadow: 0 4px 10px #b3eaff80;}
+    .avatar-stack .avatar:hover { z-index:2; transform: scale(1.15);}
+    */
+  </style>
+</head>
+<body>
+  <!-- CSS Sparkles -->
+  <div class="sparkles">
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+  </div>
+  <div class="container">
+    <div class="app-card">
+      <div class="avatar-title-row">
+        <img src="https://randomuser.me/api/portraits/lego/6.jpg" alt="ילד" class="avatar">
+        <span class="title">מסע בין דפים <span>✨</span></span>
+        <span class="score-badge">
+          <span class="star">★</span> 128
+        </span>
+      </div>
+      <div class="map-area">
+        <div class="map-icons">
+          <span>🏰</span>
+          <span>🌳</span>
+          <span>📘</span>
+        </div>
+        <div class="map-path">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+      <div class="main-buttons">
+        <button class="btn">📖 בחר ספר חדש</button>
+        <button class="btn">⭐ צפה בהתקדמות שלך</button>
+        <button class="btn chest-btn">🎁 פתח תיבת אוצר</button>
+      </div>
+    </div>
+  </div>
+  <div class="event-banner">
+    ✨ Magic Reading Quest ✨
+    <span class="subtitle">אירוע השבוע באנגלית</span>
+  </div>
+</body>
+</html>
