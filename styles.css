@@ -83,10 +83,12 @@
     box-shadow: var(--shadow-hover);
 }
 
-/* --- Today Card --- */
+/* =============================================
+   Today Card - with muscle body illustration
+   ============================================= */
 .today-card {
     border-radius: var(--border-radius);
-    padding: 1.5rem;
+    padding: 1.25rem;
     text-align: center;
 }
 
@@ -100,17 +102,31 @@
     border: 2px dashed #BDBDBD;
 }
 
+.today-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.today-card-body {
+    flex-shrink: 0;
+}
+
+.today-card-info {
+    text-align: right;
+}
+
 .today-status {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     color: var(--text);
 }
 
 .today-details {
     display: flex;
-    gap: 0.5rem;
-    justify-content: center;
+    gap: 0.4rem;
     flex-wrap: wrap;
 }
 
@@ -125,18 +141,25 @@
     display: inline-block;
     background: var(--primary-light);
     color: white;
-    padding: 0.25rem 0.75rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
-/* --- Weekly View --- */
+/* =============================================
+   Weekly View - mini body illustrations
+   ============================================= */
 .week-day {
     text-align: center;
-    padding: 0.5rem 0.25rem;
+    padding: 0.4rem 0.15rem;
     border-radius: 12px;
     transition: transform 0.2s ease;
+    min-height: 65px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .week-day.done {
@@ -152,14 +175,24 @@
 }
 
 .day-name {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-light);
     font-weight: 600;
+    margin-bottom: 2px;
 }
 
 .day-icon {
     font-size: 1.2rem;
     margin-top: 0.25rem;
+}
+
+.day-body {
+    margin-top: 2px;
+}
+
+.day-body svg {
+    display: block;
+    margin: 0 auto;
 }
 
 /* --- Insight Card --- */
@@ -175,11 +208,13 @@
     border: 1px solid var(--secondary-light);
 }
 
-/* --- Suggestion Card --- */
+/* =============================================
+   Suggestion Card - with body illustration
+   ============================================= */
 .suggestion-card {
     background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
     border-radius: var(--border-radius);
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
     margin: 0.5rem 0 1rem 0;
     text-align: center;
     font-size: 1rem;
@@ -188,28 +223,151 @@
     border: 1px solid #FFCC80;
 }
 
-/* --- Template Badge --- */
-.template-badge {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
-    text-align: center;
-    padding: 0.75rem 1rem;
-    border-radius: var(--border-radius);
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
+.suggestion-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: center;
 }
 
-/* --- Template Cards --- */
+.suggestion-body {
+    flex-shrink: 0;
+}
+
+.suggestion-body svg {
+    display: block;
+}
+
+.suggestion-text {
+    text-align: right;
+    flex: 1;
+}
+
+/* =============================================
+   Muscle Preview - large body display
+   ============================================= */
+.muscle-preview {
+    text-align: center;
+    background: linear-gradient(135deg, #E8F5E9, #F1F8E9);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 2px solid var(--primary-light);
+}
+
+.muscle-preview.cardio {
+    background: linear-gradient(135deg, #FCE4EC, #FFF3E0);
+    border-color: #EF9A9A;
+}
+
+.muscle-preview svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.muscle-preview-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 0.5rem;
+}
+
+/* =============================================
+   Muscle Picker - touch-friendly grid
+   ============================================= */
+.muscle-picker-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0.75rem 0 0.5rem 0;
+    text-align: right;
+}
+
+.muscle-card {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.muscle-card svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.muscle-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 4px;
+    text-align: center;
+}
+
+.muscle-check {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: var(--primary);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.muscle-badge svg {
+    display: block;
+    margin: 0 auto;
+}
+
+/* =============================================
+   Template Badge with Body (log page)
+   ============================================= */
+.template-badge-with-body {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+
+.template-badge-svg svg {
+    display: block;
+}
+
+.template-badge-svg svg g {
+    fill: rgba(255,255,255,0.3) !important;
+    stroke: rgba(255,255,255,0.5) !important;
+}
+
+.template-badge-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* =============================================
+   Template Cards - with body illustrations
+   ============================================= */
 .template-card {
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 1rem;
+    padding: 0.75rem 0.5rem;
     text-align: center;
     box-shadow: var(--shadow);
     margin-bottom: 0.5rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: 1px solid #E0E0E0;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .template-card:hover {
@@ -218,24 +376,60 @@
     border-color: var(--primary-light);
 }
 
+.template-card-body {
+    margin-bottom: 0.25rem;
+}
+
+.template-card-body svg {
+    display: block;
+    margin: 0 auto;
+}
+
 .template-emoji {
     font-size: 2rem;
     margin-bottom: 0.25rem;
 }
 
 .template-name {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
+    line-height: 1.2;
 }
 
 .template-meta {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-light);
 }
 
-/* --- Chat Messages --- */
+/* =============================================
+   Coach Suggestion Cards (with body SVG)
+   ============================================= */
+.coach-suggestion-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #F1F8E9;
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.25rem;
+    border: 1px solid #DCEDC8;
+}
+
+.coach-suggestion-card svg {
+    flex-shrink: 0;
+}
+
+.coach-suggestion-card span {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* =============================================
+   Chat Messages
+   ============================================= */
 .chat-msg {
     display: flex;
     align-items: flex-start;
@@ -273,16 +467,23 @@
     border-bottom-left-radius: 4px;
 }
 
-/* --- Buttons Override --- */
+/* =============================================
+   Buttons Override
+   ============================================= */
 .stButton > button {
     border-radius: 12px !important;
     font-weight: 600 !important;
     transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    min-height: 44px !important;
 }
 
 .stButton > button:hover {
     transform: translateY(-1px) !important;
     box-shadow: var(--shadow-hover) !important;
+}
+
+.stButton > button:active {
+    transform: scale(0.97) !important;
 }
 
 .stButton > button[data-testid="stBaseButton-primary"] {
@@ -304,7 +505,9 @@
     direction: rtl;
 }
 
-/* --- Mobile Optimizations --- */
+/* =============================================
+   Mobile Optimizations
+   ============================================= */
 @media (max-width: 768px) {
     .app-header h1 {
         font-size: 2rem;
@@ -314,16 +517,21 @@
         padding: 1rem;
     }
 
+    .today-card-inner {
+        gap: 0.5rem;
+    }
+
     .today-status {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 
     .template-card {
-        padding: 0.75rem;
+        padding: 0.5rem 0.25rem;
+        min-height: 110px;
     }
 
-    .template-emoji {
-        font-size: 1.5rem;
+    .template-name {
+        font-size: 0.75rem;
     }
 
     .chat-bubble {
@@ -336,15 +544,43 @@
     }
 
     .tag {
-        font-size: 0.75rem;
-        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+    }
+
+    .muscle-card {
+        padding: 6px 2px !important;
+        min-height: auto !important;
+    }
+
+    .muscle-label {
+        font-size: 0.65rem;
+    }
+
+    .muscle-preview {
+        padding: 0.75rem;
+    }
+
+    .suggestion-inner {
+        gap: 0.5rem;
+    }
+
+    .coach-suggestion-card {
+        padding: 0.4rem 0.5rem;
     }
 }
 
-/* --- Animations --- */
+/* =============================================
+   Animations
+   ============================================= */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
 }
 
 .card, .template-card, .today-card, .insight-card, .suggestion-card {
@@ -355,7 +591,17 @@
     animation: fadeIn 0.25s ease-out;
 }
 
-/* --- Scrollbar --- */
+.muscle-preview {
+    animation: fadeIn 0.35s ease-out;
+}
+
+.muscle-card {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* =============================================
+   Scrollbar
+   ============================================= */
 ::-webkit-scrollbar {
     width: 6px;
 }

@@ -23,6 +23,10 @@ from coach import (
     get_streak_message, get_no_workout_message, get_weekly_insight,
     get_ai_suggestion, get_template_suggestion,
 )
+from muscles import (
+    get_muscle_svg, get_muscle_card_html, get_workout_muscle_badge,
+    get_template_muscle_svg,
+)
 
 # ------------------------------------
 # Page Config
@@ -62,6 +66,7 @@ def init_state():
         "workout_saved": False,
         "user_id": None,
         "authenticated": False,
+        "selected_muscle": None,
     }
     for key, val in defaults.items():
         if key not in st.session_state:
@@ -150,18 +155,23 @@ def render_dashboard():
     st.markdown('<h2 class="section-title">📊 הדשבורד שלך</h2>',
                 unsafe_allow_html=True)
 
-    # --- Today's Card ---
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    # --- Today's Card with Muscle Image ---
     if today_workouts:
         w = today_workouts[0]
+        muscle_badge = get_workout_muscle_badge(w, size=70)
         st.markdown(
             f'<div class="today-card done">'
+            f'<div class="today-card-inner">'
+            f'<div class="today-card-body">'
+            f'{muscle_badge}'
+            f'</div>'
+            f'<div class="today-card-info">'
             f'<div class="today-status">✅ התאמנת היום!</div>'
             f'<div class="today-details">'
             f'<span class="tag">{w.get("workout_type", "")}</span>'
-            f'<span class="tag">קושי: {w.get("difficulty", "")}/10</span>'
+            f'<span class="tag">קושי {w.get("difficulty", "")}/10</span>'
             f'<span class="tag">{w.get("feeling", "")}</span>'
-            f'</div></div>',
+            f'</div></div></div></div>',
             unsafe_allow_html=True,
         )
     else:
@@ -172,28 +182,39 @@ def render_dashboard():
             "</div>",
             unsafe_allow_html=True,
         )
-    st.markdown("</div>", unsafe_allow_html=True)
 
     # --- Weekly View ---
     st.markdown('<h3 class="section-subtitle">השבוע בקצרה</h3>',
                 unsafe_allow_html=True)
 
-    workout_dates = {w.get("workout_date", "") for w in week_workouts}
+    # Build a map: date -> workout for the week
+    workout_by_date = {}
+    for w in week_workouts:
+        d = w.get("workout_date", "")
+        if d not in workout_by_date:
+            workout_by_date[d] = w
+
     week_cols = st.columns(7)
     day_names = ["ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳", "א׳"]
 
     for i in range(7):
         day = date.today() - timedelta(days=6 - i)
         day_str = day.isoformat()
-        is_done = day_str in workout_dates
         day_name = day_names[day.weekday()]
+        w = workout_by_date.get(day_str)
 
         with week_cols[i]:
-            if is_done:
+            if w:
+                mini_svg = get_muscle_svg(
+                    w.get("target_muscle"),
+                    w.get("training_type", "כוח"),
+                    size=32,
+                )
                 st.markdown(
                     f'<div class="week-day done">'
                     f'<div class="day-name">{day_name}</div>'
-                    f'<div class="day-icon">✅</div></div>',
+                    f'<div class="day-body">{mini_svg}</div>'
+                    f'</div>',
                     unsafe_allow_html=True,
                 )
             else:
@@ -218,11 +239,17 @@ def render_dashboard():
 
     st.markdown('<h3 class="section-subtitle">💡 הצעה עבורך</h3>',
                 unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="suggestion-card">{suggestion}</div>',
-        unsafe_allow_html=True,
-    )
+
     if template:
+        tmpl_svg = get_template_muscle_svg(template, size=60)
+        st.markdown(
+            f'<div class="suggestion-card">'
+            f'<div class="suggestion-inner">'
+            f'<div class="suggestion-body">{tmpl_svg}</div>'
+            f'<div class="suggestion-text">{suggestion}</div>'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
         if st.button(
             f'{template["emoji"]} {template["name"]}',
             key="dash_suggestion_btn",
@@ -231,6 +258,11 @@ def render_dashboard():
             st.session_state.selected_template = template
             st.session_state.page = "log"
             st.rerun()
+    else:
+        st.markdown(
+            f'<div class="suggestion-card">{suggestion}</div>',
+            unsafe_allow_html=True,
+        )
 
     # --- Progress Chart ---
     month_workouts = get_month_workouts(user_id)
@@ -275,6 +307,59 @@ def render_progress_chart(workouts):
 
 
 # ------------------------------------
+# Visual Muscle Picker
+# ------------------------------------
+def render_muscle_picker(default_muscle: str | None = None):
+    """Touch-friendly visual muscle group picker. Returns selected muscle."""
+    current = st.session_state.get("selected_muscle", default_muscle)
+
+    # Show the currently selected muscle prominently
+    if current:
+        svg_big = get_muscle_svg(current, "כוח", size=100)
+        st.markdown(
+            f'<div class="muscle-preview">'
+            f'{svg_big}'
+            f'<div class="muscle-preview-label">{current}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    # Grid of tappable muscle cards - 4 columns on top, 3 on bottom
+    row1 = MUSCLES[:4]  # חזה, גב, כתפיים, זרועות
+    row2 = MUSCLES[4:]  # בטן, רגליים, גוף מלא
+
+    cols1 = st.columns(4)
+    for idx, muscle in enumerate(row1):
+        with cols1[idx]:
+            is_sel = muscle == current
+            card_html = get_muscle_card_html(muscle, is_selected=is_sel, size=55)
+            st.markdown(card_html, unsafe_allow_html=True)
+            if st.button(
+                muscle, key=f"muscle_pick_{muscle}",
+                use_container_width=True,
+                type="primary" if is_sel else "secondary",
+            ):
+                st.session_state.selected_muscle = muscle
+                st.rerun()
+
+    cols2 = st.columns(3)
+    for idx, muscle in enumerate(row2):
+        with cols2[idx]:
+            is_sel = muscle == current
+            card_html = get_muscle_card_html(muscle, is_selected=is_sel, size=55)
+            st.markdown(card_html, unsafe_allow_html=True)
+            if st.button(
+                muscle, key=f"muscle_pick_{muscle}",
+                use_container_width=True,
+                type="primary" if is_sel else "secondary",
+            ):
+                st.session_state.selected_muscle = muscle
+                st.rerun()
+
+    return st.session_state.get("selected_muscle", default_muscle)
+
+
+# ------------------------------------
 # Log Workout
 # ------------------------------------
 def render_log_workout():
@@ -291,10 +376,14 @@ def render_log_workout():
     default_equipment = template["equipment"] if template else []
 
     if template:
+        # Show template badge with muscle illustration
+        tmpl_svg = get_template_muscle_svg(template, size=70)
         st.markdown(
-            f'<div class="template-badge">'
+            f'<div class="template-badge-with-body">'
+            f'<div class="template-badge-svg">{tmpl_svg}</div>'
+            f'<div class="template-badge-text">'
             f'{template["emoji"]} {template["name"]}'
-            f'</div>',
+            f'</div></div>',
             unsafe_allow_html=True,
         )
 
@@ -313,11 +402,30 @@ def render_log_workout():
         horizontal=True,
     )
 
-    # --- Muscle (only for strength) ---
+    # --- Muscle Picker (visual, only for strength) ---
     target_muscle = None
     if training_type == "כוח":
-        default_muscle = MUSCLES.index(template["target_muscle"]) if template and template.get("target_muscle") in MUSCLES else 0
-        target_muscle = st.selectbox("שריר מטרה", MUSCLES, index=default_muscle)
+        # Set default from template
+        default_m = None
+        if template and template.get("target_muscle") in MUSCLES:
+            default_m = template["target_muscle"]
+        if st.session_state.get("selected_muscle") is None and default_m:
+            st.session_state.selected_muscle = default_m
+
+        st.markdown('<div class="muscle-picker-label">בחר קבוצת שרירים</div>',
+                    unsafe_allow_html=True)
+        target_muscle = render_muscle_picker(default_m)
+    else:
+        # Show cardio body illustration
+        cardio_svg = get_muscle_svg(None, "סיבולת", size=100)
+        st.markdown(
+            f'<div class="muscle-preview cardio">'
+            f'{cardio_svg}'
+            f'<div class="muscle-preview-label">קרדיו / סיבולת</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        st.session_state.selected_muscle = None
 
     # --- Duration ---
     duration = st.number_input(
@@ -365,6 +473,7 @@ def render_log_workout():
         save_message(st.session_state.user_id, "coach", msg)
 
         st.session_state.selected_template = None
+        st.session_state.selected_muscle = None
         st.session_state.workout_saved = True
         st.rerun()
 
@@ -375,6 +484,7 @@ def render_log_workout():
     if template:
         if st.button("נקה תבנית", use_container_width=True):
             st.session_state.selected_template = None
+            st.session_state.selected_muscle = None
             st.rerun()
 
 
@@ -384,10 +494,6 @@ def render_log_workout():
 def render_templates():
     st.markdown('<h2 class="section-title">📋 תבניות מהירות</h2>',
                 unsafe_allow_html=True)
-    st.markdown(
-        '<p class="section-desc">בחר תבנית והתחל אימון בלחיצה אחת</p>',
-        unsafe_allow_html=True,
-    )
 
     # Category filter
     categories = ["הכל", "כוח", "סיבולת", "גמישות"]
@@ -402,7 +508,7 @@ def render_templates():
         t for t in TEMPLATES if t["category"] == selected_cat
     ]
 
-    # Render templates in grid
+    # Render templates in grid with muscle illustrations
     for i in range(0, len(filtered), 2):
         cols = st.columns(2)
         for j, col in enumerate(cols):
@@ -411,9 +517,10 @@ def render_templates():
                 break
             t = filtered[idx]
             with col:
+                tmpl_svg = get_template_muscle_svg(t, size=50)
                 st.markdown(
                     f'<div class="template-card">'
-                    f'<div class="template-emoji">{t["emoji"]}</div>'
+                    f'<div class="template-card-body">{tmpl_svg}</div>'
                     f'<div class="template-name">{t["name"]}</div>'
                     f'<div class="template-meta">{t["location"]} · {t["training_type"]}</div>'
                     f'</div>',
@@ -529,7 +636,7 @@ def render_coach():
                 st.rerun()
 
     elif step == "choose_type":
-        # Suggest templates based on energy
+        # Suggest templates based on energy - with muscle illustrations
         energy = st.session_state.coach_energy or "medium"
         suggested_ids = get_template_suggestion(energy)
         suggested_templates = [
@@ -539,6 +646,14 @@ def render_coach():
 
         st.markdown("**הצעות עבורך:**")
         for t in suggested_templates[:3]:
+            tmpl_svg = get_template_muscle_svg(t, size=40)
+            st.markdown(
+                f'<div class="coach-suggestion-card">'
+                f'{tmpl_svg}'
+                f'<span>{t["name"]}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
             if st.button(
                 f'{t["emoji"]} {t["name"]}',
                 key=f'coach_tmpl_{t["id"]}',
