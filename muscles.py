@@ -4,13 +4,6 @@ Inline SVG body maps with highlighted muscle groups.
 Each function returns an HTML string with an embedded SVG.
 """
 
-import base64
-
-def _svg_to_img(svg: str, size: int) -> str:
-    """Convert raw SVG string to a base64 <img> tag for reliable rendering."""
-    b64 = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
-    return f'<img src="data:image/svg+xml;base64,{b64}" width="{size}" height="{int(size * 1.4)}" style="display:block;margin:auto;" />'
-
 # Highlight color for active muscle
 _ACTIVE = "#4CAF50"
 _ACTIVE_LIGHT = "#81C784"
@@ -112,7 +105,7 @@ def _build_svg(muscle: str, size: int = 120, active_color: str = _ACTIVE) -> str
         {zone_svg}
     </svg>"""
 
-    return _svg_to_img(svg, size)
+    return svg
 
 
 def _build_cardio_svg(size: int = 120) -> str:
@@ -141,7 +134,7 @@ def _build_cardio_svg(size: int = 120) -> str:
         {zone_svg}
     </svg>"""
 
-    return _svg_to_img(svg, size)
+    return svg
 
 
 def get_muscle_svg(muscle: "str | None", training_type: str = "כוח",
@@ -160,7 +153,7 @@ def get_muscle_card_html(muscle: str, is_selected: bool = False,
     shadow = "0 4px 16px rgba(76,175,80,0.25)" if is_selected else "0 2px 8px rgba(0,0,0,0.06)"
     check = '<span class="muscle-check">✓</span>' if is_selected else ""
 
-    img = _build_svg(muscle, size)
+    svg = _build_svg(muscle, size)
 
     return f"""<div class="muscle-card" style="
         border:2px solid {border_color};
@@ -175,7 +168,7 @@ def get_muscle_card_html(muscle: str, is_selected: bool = False,
         min-height:{size + 60}px;
     ">
         {check}
-        {img}
+        {svg}
         <div class="muscle-label">{muscle}</div>
     </div>"""
 

@@ -4,6 +4,7 @@ Fitness tracking app with minimal text input, touch-first design.
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 from datetime import date, timedelta
 import plotly.graph_objects as go
 
@@ -51,6 +52,21 @@ def load_css():
 
 
 load_css()
+
+
+def _css_text():
+    try:
+        with open("styles.css", "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
+
+
+def render_svg_html(html: str, height: int = 200):
+    """Render HTML containing SVG using components.html for reliable display."""
+    css = _css_text()
+    full = f'<html><head><style>{css}</style></head><body style="margin:0;padding:0;direction:rtl;font-family:Segoe UI,Tahoma,Arial,sans-serif;">{html}</body></html>'
+    components.html(full, height=height, scrolling=False)
 
 
 # ------------------------------------
@@ -159,7 +175,7 @@ def render_dashboard():
     if today_workouts:
         w = today_workouts[0]
         muscle_badge = get_workout_muscle_badge(w, size=70)
-        st.markdown(
+        render_svg_html(
             f'<div class="today-card done">'
             f'<div class="today-card-inner">'
             f'<div class="today-card-body">'
@@ -172,7 +188,7 @@ def render_dashboard():
             f'<span class="tag">קושי {w.get("difficulty", "")}/10</span>'
             f'<span class="tag">{w.get("feeling", "")}</span>'
             f'</div></div></div></div>',
-            unsafe_allow_html=True,
+            height=150,
         )
     else:
         st.markdown(
@@ -210,12 +226,12 @@ def render_dashboard():
                     w.get("training_type", "כוח"),
                     size=32,
                 )
-                st.markdown(
+                render_svg_html(
                     f'<div class="week-day done">'
                     f'<div class="day-name">{day_name}</div>'
                     f'<div class="day-body">{mini_svg}</div>'
                     f'</div>',
-                    unsafe_allow_html=True,
+                    height=80,
                 )
             else:
                 st.markdown(
@@ -242,13 +258,13 @@ def render_dashboard():
 
     if template:
         tmpl_svg = get_template_muscle_svg(template, size=60)
-        st.markdown(
+        render_svg_html(
             f'<div class="suggestion-card">'
             f'<div class="suggestion-inner">'
             f'<div class="suggestion-body">{tmpl_svg}</div>'
             f'<div class="suggestion-text">{suggestion}</div>'
             f'</div></div>',
-            unsafe_allow_html=True,
+            height=130,
         )
         if st.button(
             f'{template["emoji"]} {template["name"]}',
@@ -316,12 +332,12 @@ def render_muscle_picker(default_muscle=None):
     # Show the currently selected muscle prominently
     if current:
         svg_big = get_muscle_svg(current, "כוח", size=100)
-        st.markdown(
+        render_svg_html(
             f'<div class="muscle-preview">'
             f'{svg_big}'
             f'<div class="muscle-preview-label">{current}</div>'
             f'</div>',
-            unsafe_allow_html=True,
+            height=200,
         )
 
     # Grid of tappable muscle cards - 4 columns on top, 3 on bottom
@@ -333,7 +349,7 @@ def render_muscle_picker(default_muscle=None):
         with cols1[idx]:
             is_sel = muscle == current
             card_html = get_muscle_card_html(muscle, is_selected=is_sel, size=55)
-            st.markdown(card_html, unsafe_allow_html=True)
+            render_svg_html(card_html, height=140)
             if st.button(
                 muscle, key=f"muscle_pick_{muscle}",
                 use_container_width=True,
@@ -347,7 +363,7 @@ def render_muscle_picker(default_muscle=None):
         with cols2[idx]:
             is_sel = muscle == current
             card_html = get_muscle_card_html(muscle, is_selected=is_sel, size=55)
-            st.markdown(card_html, unsafe_allow_html=True)
+            render_svg_html(card_html, height=140)
             if st.button(
                 muscle, key=f"muscle_pick_{muscle}",
                 use_container_width=True,
@@ -378,13 +394,13 @@ def render_log_workout():
     if template:
         # Show template badge with muscle illustration
         tmpl_svg = get_template_muscle_svg(template, size=70)
-        st.markdown(
+        render_svg_html(
             f'<div class="template-badge-with-body">'
             f'<div class="template-badge-svg">{tmpl_svg}</div>'
             f'<div class="template-badge-text">'
             f'{template["emoji"]} {template["name"]}'
             f'</div></div>',
-            unsafe_allow_html=True,
+            height=130,
         )
 
     # --- Workout Type ---
@@ -418,12 +434,12 @@ def render_log_workout():
     else:
         # Show cardio body illustration
         cardio_svg = get_muscle_svg(None, "סיבולת", size=100)
-        st.markdown(
+        render_svg_html(
             f'<div class="muscle-preview cardio">'
             f'{cardio_svg}'
             f'<div class="muscle-preview-label">קרדיו / סיבולת</div>'
             f'</div>',
-            unsafe_allow_html=True,
+            height=200,
         )
         st.session_state.selected_muscle = None
 
@@ -518,13 +534,13 @@ def render_templates():
             t = filtered[idx]
             with col:
                 tmpl_svg = get_template_muscle_svg(t, size=50)
-                st.markdown(
+                render_svg_html(
                     f'<div class="template-card">'
                     f'<div class="template-card-body">{tmpl_svg}</div>'
                     f'<div class="template-name">{t["name"]}</div>'
                     f'<div class="template-meta">{t["location"]} · {t["training_type"]}</div>'
                     f'</div>',
-                    unsafe_allow_html=True,
+                    height=150,
                 )
                 if st.button(
                     "בחר",
@@ -647,12 +663,12 @@ def render_coach():
         st.markdown("**הצעות עבורך:**")
         for t in suggested_templates[:3]:
             tmpl_svg = get_template_muscle_svg(t, size=40)
-            st.markdown(
+            render_svg_html(
                 f'<div class="coach-suggestion-card">'
                 f'{tmpl_svg}'
                 f'<span>{t["name"]}</span>'
                 f'</div>',
-                unsafe_allow_html=True,
+                height=80,
             )
             if st.button(
                 f'{t["emoji"]} {t["name"]}',
