@@ -1,5 +1,7 @@
-index.global.js:70 SyntaxError: "[object Object]" is not valid JSON
-    at JSON.parse (<anonymous>)
-    at Object.read (index.global.js:70:33977)
-    at v (index.global.js:70:41169)
-h	@	index.global.js:70
+
+עוד שגיאה 
+index.CIuaA8q0.js:1 [Intervention] Ignored attempt to cancel a touchend event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.
+T.t.onEnd	@	index.CIuaA8q0.js:1
+(anonymous)	@	index.CIuaA8q0.js:1
+requestAnimationFrame		
+p	@	index.CIuaA8q0.js:1
