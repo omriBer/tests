@@ -46,7 +46,8 @@ export function filterExercises(
 export function getExerciseGifUrl(exercise: Exercise): string | null {
   const imageId = exercise.image_id;
   if (!imageId) return null;
-  return `${EXERCISE_IMAGE_BASE_URL}/${imageId}/0.gif`;
+  // free-exercise-db has only JPGs (0.jpg, 1.jpg), no GIFs
+  return `${EXERCISE_IMAGE_BASE_URL}/${imageId}/0.jpg`;
 }
 
 export function getExerciseImageUrl(exercise: Exercise): string | null {
