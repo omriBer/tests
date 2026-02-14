@@ -19,6 +19,7 @@ from database import (
     sign_in, sign_up,
 )
 from templates_data import TEMPLATES, get_template_by_id
+from exercises_data import get_exercises_for_template, get_warmup_exercises, get_cooldown_exercises
 from coach import (
     get_greeting, get_workout_suggestion, get_post_workout_message,
     get_streak_message, get_no_workout_message, get_weekly_insight,
@@ -403,6 +404,32 @@ def render_log_workout():
             height=130,
         )
 
+        # Show exercise list for this template
+        exercises = get_exercises_for_template(template)
+        if exercises:
+            with st.expander(f"תרגילים באימון ({len(exercises)})", expanded=False):
+                # Warmup
+                warmup = get_warmup_exercises(template)
+                if warmup:
+                    st.markdown("**חימום:**")
+                    for w_ex in warmup:
+                        st.markdown(f"- {w_ex['name']}")
+
+                # Main exercises
+                st.markdown("**תרגילים עיקריים:**")
+                for ex in exercises:
+                    rest_txt = f" | מנוחה {ex['rest_sec']}ש׳" if ex['rest_sec'] > 0 else ""
+                    st.markdown(
+                        f"- **{ex['name']}** — {ex['sets']}×{ex['reps']}{rest_txt}"
+                    )
+
+                # Cooldown
+                cooldown = get_cooldown_exercises(template)
+                if cooldown:
+                    st.markdown("**שחרור:**")
+                    for c_ex in cooldown:
+                        st.markdown(f"- {c_ex['name']}")
+
     # --- Workout Type ---
     workout_type = st.selectbox(
         "סוג אימון",
@@ -534,13 +561,21 @@ def render_templates():
             t = filtered[idx]
             with col:
                 tmpl_svg = get_template_muscle_svg(t, size=50)
+                # Build exercise summary
+                exercises = get_exercises_for_template(t)
+                ex_count = len(exercises)
+                ex_names = " · ".join(ex["name"] for ex in exercises[:3])
+                if ex_count > 3:
+                    ex_names += f" +{ex_count - 3}"
+
                 render_svg_html(
                     f'<div class="template-card">'
                     f'<div class="template-card-body">{tmpl_svg}</div>'
                     f'<div class="template-name">{t["name"]}</div>'
                     f'<div class="template-meta">{t["location"]} · {t["training_type"]}</div>'
+                    f'<div class="template-exercises" style="font-size:11px;color:#888;margin-top:4px;direction:rtl;">{ex_names}</div>'
                     f'</div>',
-                    height=150,
+                    height=170,
                 )
                 if st.button(
                     "בחר",

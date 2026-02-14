@@ -5,6 +5,7 @@ Rule-based coach that guides users through workout logging with encouragement.
 
 import random
 from datetime import date, datetime
+from exercises_data import get_exercises_for_template
 
 GREETINGS = [
     "בוקר טוב! איך אתה מרגיש היום?",
@@ -124,6 +125,17 @@ def get_weekly_insight(week_workouts: list):
         return f"שבוע מטורף! {count} אימונים! אתה מכונה! 🔥🏆"
 
 
+def _get_exercise_names_for_template_id(template_id: str, limit: int = 3):
+    """Get Hebrew exercise names for a template ID."""
+    from templates_data import get_template_by_id
+    template = get_template_by_id(template_id)
+    if not template:
+        return ""
+    exercises = get_exercises_for_template(template)
+    names = [ex["name"] for ex in exercises[:limit]]
+    return ", ".join(names)
+
+
 def get_ai_suggestion(week_workouts: list, energy_level: str = "medium"):
     """Generate a simple AI suggestion based on this week's workouts."""
     count = len(week_workouts)
@@ -134,6 +146,9 @@ def get_ai_suggestion(week_workouts: list, energy_level: str = "medium"):
     if count == 0:
         suggestion = get_workout_suggestion(energy_level)
         template_id = random.choice(get_template_suggestion(energy_level))
+        ex_names = _get_exercise_names_for_template_id(template_id)
+        if ex_names:
+            suggestion += f"\nכולל: {ex_names}"
         return suggestion, template_id
 
     # Check what's missing
@@ -160,5 +175,9 @@ def get_ai_suggestion(week_workouts: list, energy_level: str = "medium"):
     else:
         suggestion = get_workout_suggestion(energy_level)
         template_id = random.choice(get_template_suggestion(energy_level))
+
+    ex_names = _get_exercise_names_for_template_id(template_id)
+    if ex_names:
+        suggestion += f"\nכולל: {ex_names}"
 
     return suggestion, template_id

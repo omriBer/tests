@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:www.hevyapp.com)",
-      "WebFetch(domain:www.prpath.app)"
+      "WebFetch(domain:www.prpath.app)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
