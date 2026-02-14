@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heebo: "Heebo", sans-serif;
+  --color-dark-bg: #0D1117;
+  --color-dark-card: #161B22;
+  --color-dark-border: #30363D;
+  --color-dark-text: #8B949E;
+  --color-neon: #00E676;
+  --color-neon-dim: #69F0AE;
+  --color-neon-glow: rgba(0, 230, 118, 0.25);
+  --color-cardio-red: #FF5252;
+}
+
+/* Glassmorphism card */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+.glass-hover {
+  transition: all 0.2s ease;
+}
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 230, 118, 0.3);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.15);
+}
+.glass-hover:active {
+  transform: scale(0.97);
+}
+
+/* Neon glow effects */
+.neon-glow {
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.3), 0 0 40px rgba(0, 230, 118, 0.15);
+}
+
+.neon-text {
+  color: #00E676;
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+}
+
+/* Pulse animation for low BB Garmin */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(0, 230, 118, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(0, 230, 118, 0.5), 0 0 48px rgba(0, 230, 118, 0.2);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Circle timer stroke animation */
+@keyframes timerStroke {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 283;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363D;
+  border-radius: 2px;
+}
+
+/* Safe area padding for PWA */
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Disable text selection on cards */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}

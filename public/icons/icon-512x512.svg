@@ -1,0 +1,17 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect width="512" height="512" fill="#0D1117"/>
+
+  <!-- Dumbbell icon (scaled for 512x512) -->
+  <!-- Left weight plate -->
+  <rect x="80" y="186" width="80" height="140" rx="10" fill="#00E676"/>
+
+  <!-- Center bar -->
+  <rect x="165" y="213" width="182" height="86" rx="15" fill="#00E676"/>
+
+  <!-- Right weight plate -->
+  <rect x="352" y="186" width="80" height="140" rx="10" fill="#00E676"/>
+
+  <!-- Highlight for depth -->
+  <ellipse cx="256" cy="196" rx="110" ry="22" fill="#33FF77" opacity="0.4"/>
+</svg>

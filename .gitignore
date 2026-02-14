@@ -3,3 +3,9 @@ __pycache__/
 .env
 *.log
 err.log.txt
+
+# Next.js
+.next/
+out/
+node_modules/
+.vercel

@@ -183,23 +183,79 @@ URL: https://2zqfpmejabsauqxbkbcwys.streamlit.app/
 8. ~~Ghost Coach + Summary screen~~ ✅ הושלם
 9. Silent Garmin - auto-highlight easy cards (בסיסי מומש, לשפר) ⏳
 
+### 13. Next.js/React Rebuild
+**תאריך:** 2026-02-14
+
+**מטרה:** שכתוב מלא של האפליקציה מ-Streamlit (Python) ל-Next.js/React (TypeScript) עם דיפלוי על Vercel.
+
+**Tech Stack:**
+- Next.js 15 (App Router) + TypeScript
+- Tailwind CSS v4
+- Framer Motion (אנימציות)
+- localStorage (אימונים, streaks)
+- PWA (manifest.json + service worker)
+
+**קבצים חדשים (Next.js):**
+- `app/layout.tsx` - RTL Hebrew, Heebo font, dark theme #0D1117
+- `app/page.tsx` - State machine: context→gear→muscle→player→summary
+- `app/globals.css` - Tailwind + glassmorphism + neon animations
+- `components/ContextCards.tsx` - 6 כרטיסי context עם Framer Motion + Garmin silent
+- `components/GearCards.tsx` - 3 כרטיסי gear (דילוג אוטומטי ב-microwave/zoom)
+- `components/MuscleMap.tsx` - SVG אינטראקטיבי עם neon glow + hover
+- `components/WorkoutPlayer.tsx` - GIF hero + HUD overlays + DO/DON'T tips
+- `components/CircleTimer.tsx` - טיימר עגול neon (60 שניות) + auto-advance
+- `components/Summary.tsx` - סטטיסטיקות, streak, weekly insight
+- `components/GhostCoach.tsx` - Toast overlay עם Framer Motion
+- `lib/exercises.ts` - פורט מ-exercises_data.py
+- `lib/templates.ts` - פורט מ-templates_data.py (46 תבניות)
+- `lib/storage.ts` - localStorage wrapper
+- `lib/garmin.ts` - Demo data + energy suggestion
+- `lib/coach.ts` - Ghost Coach messages
+- `public/data/exercises_db.json` - מועתק מהשורש
+- `public/manifest.json` - PWA config
+- `public/sw.js` - Service Worker (cache-first)
+
+**Config files:**
+- `package.json`, `tsconfig.json`, `next.config.js`, `postcss.config.mjs`, `eslint.config.mjs`
+
+**קבצי Python ישנים נשארו בריפו** (לא נמחקו).
+
+**Build:** `npm run build` עובר בהצלחה, 150kB First Load JS
+
 ## בעיות פתוחות
-- אין חיבור ל-Supabase (רץ במצב דמו)
-- Garmin רץ בדמו - צריך להוסיף GARMIN_EMAIL + GARMIN_PASSWORD ב-Secrets
-- לבדוק שה-GIFs מ-free-exercise-db נטענים (תלוי ב-GitHub raw URLs)
-- לבדוק שה-dark mode מרונדר נכון בכל הדפדפנים
+- PWA icons הם SVG placeholders (צריך להחליף ל-PNG אמיתיים)
+- Garmin רץ בדמו (demo data only)
+- לבדוק שה-GIFs מ-free-exercise-db נטענים (GitHub raw URLs)
+- דיפלוי ל-Vercel (push to GitHub → auto-deploy)
 
 ## מבנה הפרויקט
+
+### Next.js (חדש)
 | קובץ | תפקיד |
 |---|---|
-| `app.py` | State Machine - Context→Gear→Muscle→Player→Summary (אפס טפסים) |
-| `config.py` | קבועים - סוגי אימונים, שרירים, מיקומים |
-| `database.py` | שכבת נתונים - Supabase / מצב דמו |
-| `coach.py` | Ghost Coach + קואצ' חכם - הודעות לפי context, Garmin-aware |
-| `garmin.py` | אינטגרציית Garmin Connect - Body Battery, שינה, סטרס, צעדים |
-| `muscles.py` | איורי SVG של קבוצות שרירים (dark mode) |
-| `templates_data.py` | 55 תבניות אימון עם context/gear, match_templates() |
-| `exercises_db.json` | מאגר 120 תרגילים (JSON) |
-| `exercises_data.py` | מודול טעינה + GIF URLs + DO/DON'T tips |
-| `styles.css` | Tinder-Gym UI - Dark Glassmorphism, Player, Cards, Summary |
-| `schema.sql` | סכמת DB ל-Supabase |
+| `app/page.tsx` | State Machine - Context→Gear→Muscle→Player→Summary |
+| `components/ContextCards.tsx` | 6 כרטיסי בחירת context |
+| `components/GearCards.tsx` | 3 כרטיסי בחירת ציוד |
+| `components/MuscleMap.tsx` | SVG אינטראקטיבי לבחירת שריר |
+| `components/WorkoutPlayer.tsx` | GIF hero + HUD + timer |
+| `components/CircleTimer.tsx` | טיימר עגול neon |
+| `components/Summary.tsx` | סיכום אימון |
+| `components/GhostCoach.tsx` | Toast overlay |
+| `lib/exercises.ts` | טעינת תרגילים + GIF URLs + tips |
+| `lib/templates.ts` | 46 תבניות + matchTemplates() |
+| `lib/storage.ts` | localStorage wrapper |
+| `lib/garmin.ts` | Garmin demo data |
+| `lib/coach.ts` | Ghost Coach messages |
+
+### Streamlit (ישן - נשאר בריפו)
+| קובץ | תפקיד |
+|---|---|
+| `app.py` | Streamlit State Machine (deprecated) |
+| `config.py` | קבועים |
+| `database.py` | שכבת נתונים Supabase/דמו |
+| `coach.py` | קואצ' חכם (Python) |
+| `garmin.py` | Garmin Connect (Python) |
+| `muscles.py` | SVG paths (Python) |
+| `templates_data.py` | תבניות אימון (Python) |
+| `exercises_db.json` | מאגר 120 תרגילים |
+| `exercises_data.py` | מודול תרגילים (Python) |
