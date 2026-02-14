@@ -26,3 +26,27 @@ ENERGY_LEVELS = {
     "medium": {"label": "בינונית", "emoji": "💪"},
     "low": {"label": "נמוכה", "emoji": "🧘"},
 }
+
+GOAL_TYPES = {
+    "weekly_workouts": {
+        "label": "אימונים בשבוע",
+        "icon": "🎯",
+        "unit": "אימונים",
+        "options": [2, 3, 4, 5, 6, 7],
+        "default": 3,
+    },
+    "weekly_minutes": {
+        "label": "דקות בשבוע",
+        "icon": "⏱️",
+        "unit": "דקות",
+        "options": [60, 90, 120, 150, 180, 240],
+        "default": 120,
+    },
+    "weekly_strength": {
+        "label": "אימוני כוח בשבוע",
+        "icon": "💪",
+        "unit": "אימוני כוח",
+        "options": [1, 2, 3, 4, 5],
+        "default": 2,
+    },
+}

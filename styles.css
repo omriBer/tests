@@ -1,6 +1,6 @@
 /* =============================================
    FitnessMate - Custom Styles
-   Green/Blue soft theme, mobile-first
+   Green/Blue soft theme, mobile-first, RTL
    ============================================= */
 
 /* --- Root Variables --- */
@@ -16,6 +16,7 @@
     --text-light: #607D8B;
     --success: #66BB6A;
     --warning: #FFA726;
+    --danger: #EF5350;
     --border-radius: 16px;
     --shadow: 0 2px 12px rgba(46, 64, 87, 0.08);
     --shadow-hover: 0 4px 20px rgba(46, 64, 87, 0.12);
@@ -33,13 +34,11 @@
     padding: 2rem 1rem;
     margin-bottom: 1rem;
 }
-
 .app-header h1 {
     font-size: 2.5rem;
     color: var(--primary-dark);
     margin-bottom: 0.5rem;
 }
-
 .app-header .subtitle {
     color: var(--text-light);
     font-size: 1.1rem;
@@ -48,88 +47,84 @@
 /* --- Section Titles --- */
 .section-title {
     color: var(--text);
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     text-align: right;
 }
-
 .section-subtitle {
     color: var(--text);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    margin: 1.5rem 0 0.5rem 0;
+    margin: 1.25rem 0 0.5rem 0;
     text-align: right;
-}
-
-.section-desc {
-    color: var(--text-light);
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    text-align: right;
-}
-
-/* --- Cards --- */
-.card {
-    background: var(--card-bg);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    box-shadow: var(--shadow);
-    margin-bottom: 1rem;
-    transition: box-shadow 0.2s ease;
-}
-
-.card:hover {
-    box-shadow: var(--shadow-hover);
 }
 
 /* =============================================
-   Today Card - with muscle body illustration
+   Streak Banner
+   ============================================= */
+.streak-banner {
+    background: linear-gradient(135deg, #FF6F00, #F57C00);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+.streak-count {
+    font-size: 2rem;
+    font-weight: 900;
+    color: white;
+    line-height: 1;
+}
+.streak-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+}
+.streak-fire {
+    font-size: 1.3rem;
+}
+
+/* =============================================
+   Today Card
    ============================================= */
 .today-card {
     border-radius: var(--border-radius);
     padding: 1.25rem;
     text-align: center;
+    margin-bottom: 0.75rem;
 }
-
 .today-card.done {
     background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
     border: 2px solid var(--primary-light);
 }
-
 .today-card.pending {
     background: linear-gradient(135deg, #F5F5F5, #EEEEEE);
     border: 2px dashed #BDBDBD;
 }
-
 .today-card-inner {
     display: flex;
     align-items: center;
     gap: 1rem;
     justify-content: center;
 }
-
-.today-card-body {
-    flex-shrink: 0;
-}
-
-.today-card-info {
-    text-align: right;
-}
-
+.today-card-body { flex-shrink: 0; }
+.today-card-info { text-align: right; }
 .today-status {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 700;
     margin-bottom: 0.4rem;
     color: var(--text);
 }
-
 .today-details {
     display: flex;
     gap: 0.4rem;
     flex-wrap: wrap;
 }
-
 .today-action {
     color: var(--text-light);
     font-size: 1rem;
@@ -143,187 +138,174 @@
     color: white;
     padding: 0.2rem 0.6rem;
     border-radius: 20px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 500;
 }
 
 /* =============================================
-   Weekly View - mini body illustrations
+   Goal Progress Bars (Dashboard inline)
+   ============================================= */
+.goal-inline {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.4rem;
+    box-shadow: var(--shadow);
+}
+.goal-inline-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+}
+.goal-bar-bg {
+    background: #E0E0E0;
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+}
+.goal-bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.5s ease;
+}
+
+/* =============================================
+   Weekly View
    ============================================= */
 .week-day {
     text-align: center;
-    padding: 0.4rem 0.15rem;
+    padding: 0.35rem 0.1rem;
     border-radius: 12px;
     transition: transform 0.2s ease;
-    min-height: 65px;
+    min-height: 62px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
 }
-
 .week-day.done {
     background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
 }
-
 .week-day.empty {
     background: #F5F5F5;
 }
-
-.week-day:hover {
-    transform: scale(1.05);
-}
-
+.week-day:hover { transform: scale(1.05); }
 .day-name {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-light);
     font-weight: 600;
     margin-bottom: 2px;
 }
-
 .day-icon {
-    font-size: 1.2rem;
-    margin-top: 0.25rem;
+    font-size: 1rem;
+    color: #BDBDBD;
+    margin-top: 0.2rem;
 }
-
-.day-body {
-    margin-top: 2px;
-}
-
-.day-body svg {
-    display: block;
-    margin: 0 auto;
-}
+.day-body { margin-top: 2px; }
+.day-body svg { display: block; margin: 0 auto; }
 
 /* --- Insight Card --- */
 .insight-card {
     background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
     border-radius: var(--border-radius);
-    padding: 1rem 1.5rem;
-    margin: 1rem 0;
+    padding: 0.85rem 1.25rem;
+    margin: 0.75rem 0;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     color: #1565C0;
     border: 1px solid var(--secondary-light);
 }
 
 /* =============================================
-   Suggestion Card - with body illustration
+   Suggestion Card
    ============================================= */
 .suggestion-card {
     background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
     border-radius: var(--border-radius);
-    padding: 1rem 1.25rem;
-    margin: 0.5rem 0 1rem 0;
+    padding: 0.85rem 1rem;
+    margin: 0.5rem 0 0.75rem 0;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     color: #E65100;
     border: 1px solid #FFCC80;
 }
-
 .suggestion-inner {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
     justify-content: center;
 }
-
-.suggestion-body {
-    flex-shrink: 0;
-}
-
-.suggestion-body svg {
-    display: block;
-}
-
-.suggestion-text {
-    text-align: right;
-    flex: 1;
-}
+.suggestion-body { flex-shrink: 0; }
+.suggestion-body svg { display: block; }
+.suggestion-text { text-align: right; flex: 1; }
 
 /* =============================================
-   Muscle Preview - large body display
+   Muscle Preview
    ============================================= */
 .muscle-preview {
     text-align: center;
     background: linear-gradient(135deg, #E8F5E9, #F1F8E9);
     border-radius: var(--border-radius);
-    padding: 1rem;
-    margin-bottom: 1rem;
+    padding: 0.85rem;
+    margin-bottom: 0.75rem;
     border: 2px solid var(--primary-light);
 }
-
 .muscle-preview.cardio {
     background: linear-gradient(135deg, #FCE4EC, #FFF3E0);
     border-color: #EF9A9A;
 }
-
-.muscle-preview svg {
-    display: block;
-    margin: 0 auto;
-}
-
+.muscle-preview svg { display: block; margin: 0 auto; }
 .muscle-preview-label {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--text);
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
 }
 
 /* =============================================
-   Muscle Picker - touch-friendly grid
+   Muscle Picker Grid
    ============================================= */
 .muscle-picker-label {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text);
-    margin: 0.75rem 0 0.5rem 0;
+    margin: 0.5rem 0 0.4rem 0;
     text-align: right;
 }
-
 .muscle-card {
     -webkit-tap-highlight-color: transparent;
     user-select: none;
 }
-
-.muscle-card svg {
-    display: block;
-    margin: 0 auto;
-}
-
+.muscle-card svg { display: block; margin: 0 auto; }
 .muscle-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--text);
-    margin-top: 4px;
+    margin-top: 3px;
     text-align: center;
 }
-
 .muscle-check {
     position: absolute;
-    top: 4px;
-    left: 4px;
+    top: 3px;
+    left: 3px;
     background: var(--primary);
     color: white;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: bold;
 }
-
-.muscle-badge svg {
-    display: block;
-    margin: 0 auto;
-}
+.muscle-badge svg { display: block; margin: 0 auto; }
 
 /* =============================================
-   Template Badge with Body (log page)
+   Template Badge (log page)
    ============================================= */
 .template-badge-with-body {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
@@ -331,140 +313,277 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
+    padding: 0.65rem 1rem;
     border-radius: var(--border-radius);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     justify-content: center;
 }
-
-.template-badge-svg svg {
-    display: block;
-}
-
+.template-badge-svg svg { display: block; }
 .template-badge-svg svg g {
     fill: rgba(255,255,255,0.3) !important;
     stroke: rgba(255,255,255,0.5) !important;
 }
-
 .template-badge-text {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
 }
 
 /* =============================================
-   Template Cards - with body illustrations
+   Template Cards
    ============================================= */
 .template-card {
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 0.75rem 0.5rem;
+    padding: 0.65rem 0.4rem;
     text-align: center;
     box-shadow: var(--shadow);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: 1px solid #E0E0E0;
-    min-height: 130px;
+    min-height: 120px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
 }
-
 .template-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
     border-color: var(--primary-light);
 }
-
-.template-card-body {
-    margin-bottom: 0.25rem;
-}
-
-.template-card-body svg {
-    display: block;
-    margin: 0 auto;
-}
-
-.template-emoji {
-    font-size: 2rem;
-    margin-bottom: 0.25rem;
-}
-
+.template-card-body { margin-bottom: 0.2rem; }
+.template-card-body svg { display: block; margin: 0 auto; }
 .template-name {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: var(--text);
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.1rem;
     line-height: 1.2;
 }
-
 .template-meta {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--text-light);
 }
 
-/* =============================================
-   Coach Suggestion Cards (with body SVG)
-   ============================================= */
-.coach-suggestion-card {
+/* Mini template cards (log page) */
+.template-card-mini {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: #F1F8E9;
+    gap: 0.4rem;
+    background: var(--card-bg);
+    border: 1px solid #E0E0E0;
     border-radius: 12px;
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.5rem;
     margin-bottom: 0.25rem;
-    border: 1px solid #DCEDC8;
+    box-shadow: var(--shadow);
 }
-
-.coach-suggestion-card svg {
-    flex-shrink: 0;
-}
-
-.coach-suggestion-card span {
-    font-size: 0.9rem;
+.template-card-mini svg { flex-shrink: 0; }
+.template-card-mini-name {
+    font-size: 0.72rem;
     font-weight: 500;
     color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* =============================================
-   Chat Messages
+   Coach Chat
    ============================================= */
 .chat-msg {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.6rem;
 }
-
-.chat-msg.user {
-    flex-direction: row-reverse;
-}
-
-.chat-avatar {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
-
+.chat-msg.user { flex-direction: row-reverse; }
+.chat-avatar { font-size: 1.4rem; flex-shrink: 0; }
 .chat-bubble {
     max-width: 80%;
-    padding: 0.75rem 1rem;
+    padding: 0.65rem 0.85rem;
     border-radius: 16px;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 0.9rem;
+    line-height: 1.45;
     white-space: pre-wrap;
 }
-
 .chat-bubble.coach {
     background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
     color: var(--text);
     border-bottom-right-radius: 4px;
 }
-
 .chat-bubble.user {
     background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
     color: var(--text);
     border-bottom-left-radius: 4px;
+}
+.coach-suggestion-card {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #F1F8E9;
+    border-radius: 12px;
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.2rem;
+    border: 1px solid #DCEDC8;
+}
+.coach-suggestion-card svg { flex-shrink: 0; }
+.coach-suggestion-card span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* =============================================
+   History Page
+   ============================================= */
+.history-date-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-light);
+    padding: 0.6rem 0 0.3rem 0;
+    border-bottom: 1px solid #E0E0E0;
+    margin-bottom: 0.4rem;
+}
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--card-bg);
+    border: 1px solid #E0E0E0;
+    border-radius: 14px;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.3rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s ease;
+}
+.history-item:hover { transform: translateX(-2px); }
+.history-item-body { flex-shrink: 0; }
+.history-item-body svg { display: block; }
+.history-item-info { flex: 1; }
+.history-item-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.15rem;
+}
+.history-item-meta {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+.empty-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+.empty-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+}
+.empty-sub { font-size: 0.9rem; color: var(--text-light); }
+
+/* =============================================
+   Stat Cards (Analytics / Profile)
+   ============================================= */
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid #E0E0E0;
+    border-radius: 14px;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    margin-bottom: 0.5rem;
+}
+.stat-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.1;
+}
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-top: 0.15rem;
+}
+
+/* =============================================
+   Profile Page
+   ============================================= */
+.profile-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--border-radius);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+.profile-avatar {
+    font-size: 3rem;
+    margin-bottom: 0.25rem;
+}
+.profile-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+}
+
+/* Favorite muscle card */
+.fav-muscle-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border: 1px solid var(--primary-light);
+    justify-content: center;
+}
+.fav-muscle-card svg { display: block; }
+.fav-muscle-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* =============================================
+   Goals
+   ============================================= */
+.goal-card {
+    background: var(--card-bg);
+    border: 1px solid #E0E0E0;
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: var(--shadow);
+}
+.goal-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+.goal-card-icon { font-size: 1.2rem; }
+.goal-card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+}
+.goal-card-status {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+.goal-card-progress { margin-top: 0.25rem; }
+.goal-card-detail {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 0.3rem;
+    text-align: center;
 }
 
 /* =============================================
@@ -476,16 +595,13 @@
     transition: transform 0.15s ease, box-shadow 0.15s ease !important;
     min-height: 44px !important;
 }
-
 .stButton > button:hover {
     transform: translateY(-1px) !important;
     box-shadow: var(--shadow-hover) !important;
 }
-
 .stButton > button:active {
     transform: scale(0.97) !important;
 }
-
 .stButton > button[data-testid="stBaseButton-primary"] {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
     border: none !important;
@@ -497,77 +613,49 @@
 }
 
 /* --- Select / Radio RTL fix --- */
-.stRadio > div {
-    flex-direction: row-reverse;
-}
-
-.stSelectbox, .stMultiSelect {
-    direction: rtl;
-}
+.stRadio > div { flex-direction: row-reverse; }
+.stSelectbox, .stMultiSelect { direction: rtl; }
 
 /* =============================================
    Mobile Optimizations
    ============================================= */
 @media (max-width: 768px) {
-    .app-header h1 {
-        font-size: 2rem;
-    }
+    .app-header h1 { font-size: 2rem; }
+    .today-card { padding: 0.85rem; }
+    .today-card-inner { gap: 0.5rem; }
+    .today-status { font-size: 1rem; }
+    .template-card { padding: 0.5rem 0.2rem; min-height: 100px; }
+    .template-name { font-size: 0.72rem; }
+    .chat-bubble { max-width: 90%; font-size: 0.85rem; }
+    .section-title { font-size: 1.2rem; }
+    .tag { font-size: 0.7rem; padding: 0.15rem 0.4rem; }
+    .muscle-card { padding: 5px 2px !important; min-height: auto !important; }
+    .muscle-label { font-size: 0.6rem; }
+    .muscle-preview { padding: 0.65rem; }
+    .suggestion-inner { gap: 0.4rem; }
+    .coach-suggestion-card { padding: 0.35rem 0.4rem; }
+    .streak-banner { padding: 0.6rem 1rem; }
+    .streak-count { font-size: 1.6rem; }
+    .streak-label { font-size: 0.8rem; }
+    .stat-card { padding: 0.6rem 0.3rem; }
+    .stat-value { font-size: 1.3rem; }
+    .stat-label { font-size: 0.6rem; }
+    .history-item { padding: 0.5rem 0.6rem; gap: 0.4rem; }
+    .history-item-title { font-size: 0.82rem; }
+    .history-item-meta { font-size: 0.7rem; }
+    .profile-header { padding: 1.25rem 0.75rem; }
+    .profile-avatar { font-size: 2.5rem; }
+    .profile-name { font-size: 1.15rem; }
+    .goal-card { padding: 0.65rem 0.75rem; }
+    .goal-inline { padding: 0.5rem 0.75rem; }
+}
 
-    .today-card {
-        padding: 1rem;
-    }
-
-    .today-card-inner {
-        gap: 0.5rem;
-    }
-
-    .today-status {
-        font-size: 1rem;
-    }
-
-    .template-card {
-        padding: 0.5rem 0.25rem;
-        min-height: 110px;
-    }
-
-    .template-name {
-        font-size: 0.75rem;
-    }
-
-    .chat-bubble {
-        max-width: 90%;
-        font-size: 0.9rem;
-    }
-
-    .section-title {
-        font-size: 1.3rem;
-    }
-
-    .tag {
-        font-size: 0.7rem;
-        padding: 0.15rem 0.4rem;
-    }
-
-    .muscle-card {
-        padding: 6px 2px !important;
-        min-height: auto !important;
-    }
-
-    .muscle-label {
-        font-size: 0.65rem;
-    }
-
-    .muscle-preview {
-        padding: 0.75rem;
-    }
-
-    .suggestion-inner {
-        gap: 0.5rem;
-    }
-
-    .coach-suggestion-card {
-        padding: 0.4rem 0.5rem;
-    }
+@media (max-width: 380px) {
+    .section-title { font-size: 1.1rem; }
+    .week-day { min-height: 55px; padding: 0.25rem 0; }
+    .day-name { font-size: 0.55rem; }
+    .stat-value { font-size: 1.1rem; }
+    .template-card { min-height: 90px; }
 }
 
 /* =============================================
@@ -577,44 +665,33 @@
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes pulse {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
+    50% { transform: scale(1.02); }
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
-.card, .template-card, .today-card, .insight-card, .suggestion-card {
+.template-card, .today-card, .insight-card, .suggestion-card,
+.stat-card, .goal-card, .goal-inline {
     animation: fadeIn 0.3s ease-out;
 }
-
-.chat-msg {
-    animation: fadeIn 0.25s ease-out;
-}
-
-.muscle-preview {
-    animation: fadeIn 0.35s ease-out;
-}
-
-.muscle-card {
-    animation: fadeIn 0.2s ease-out;
-}
+.chat-msg { animation: fadeIn 0.25s ease-out; }
+.muscle-preview { animation: fadeIn 0.3s ease-out; }
+.muscle-card { animation: fadeIn 0.2s ease-out; }
+.streak-banner { animation: fadeIn 0.4s ease-out; }
+.history-item { animation: slideIn 0.25s ease-out; }
+.profile-header { animation: fadeIn 0.35s ease-out; }
 
 /* =============================================
    Scrollbar
    ============================================= */
-::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg);
-}
-
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb {
     background: var(--primary-light);
     border-radius: 3px;
 }
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
-}
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
