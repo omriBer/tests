@@ -1,7 +1,0 @@
-
-עוד שגיאה 
-index.CIuaA8q0.js:1 [Intervention] Ignored attempt to cancel a touchend event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.
-T.t.onEnd	@	index.CIuaA8q0.js:1
-(anonymous)	@	index.CIuaA8q0.js:1
-requestAnimationFrame		
-p	@	index.CIuaA8q0.js:1

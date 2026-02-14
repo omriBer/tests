@@ -9,7 +9,7 @@
 
 ## סטטוס נוכחי
 האפליקציה מדופלית על Streamlit Community Cloud.
-URL: https://fqrspr97o8vk4rz8muhpev.streamlit.app/
+URL: https://2zqfpmejabsauqxbkbcwys.streamlit.app/
 
 ## מה נעשה עד כה
 
