@@ -1,0 +1,5 @@
+index.global.js:70 SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at Object.read (index.global.js:70:33977)
+    at v (index.global.js:70:41169)
+h	@	index.global.js:70
