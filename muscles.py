@@ -137,7 +137,7 @@ def _build_cardio_svg(size: int = 120) -> str:
     return svg
 
 
-def get_muscle_svg(muscle: str | None, training_type: str = "כוח",
+def get_muscle_svg(muscle: "str | None", training_type: str = "כוח",
                    size: int = 120) -> str:
     """Get the SVG illustration for a given muscle/training type."""
     if training_type == "סיבולת" or muscle is None:

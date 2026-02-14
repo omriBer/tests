@@ -309,7 +309,7 @@ def render_progress_chart(workouts):
 # ------------------------------------
 # Visual Muscle Picker
 # ------------------------------------
-def render_muscle_picker(default_muscle: str | None = None):
+def render_muscle_picker(default_muscle=None):
     """Touch-friendly visual muscle group picker. Returns selected muscle."""
     current = st.session_state.get("selected_muscle", default_muscle)
 
