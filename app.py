@@ -1,6 +1,6 @@
 """
 FitnessMate - Main Streamlit Application
-Fitness tracking app with minimal text input, touch-first design.
+Fitness tracking app with modern dark UI, Garmin integration, smart coach.
 """
 
 import streamlit as st
@@ -19,16 +19,21 @@ from database import (
     sign_in, sign_up,
 )
 from templates_data import TEMPLATES, get_template_by_id
-from exercises_data import get_exercises_for_template, get_warmup_exercises, get_cooldown_exercises
+from exercises_data import (
+    get_exercises_for_template, get_warmup_exercises,
+    get_cooldown_exercises, get_exercise_image_url,
+)
 from coach import (
     get_greeting, get_workout_suggestion, get_post_workout_message,
     get_streak_message, get_no_workout_message, get_weekly_insight,
-    get_ai_suggestion, get_template_suggestion,
+    get_ai_suggestion, get_template_suggestion, get_persuasion_message,
+    get_proactive_message,
 )
 from muscles import (
     get_muscle_svg, get_muscle_card_html, get_workout_muscle_badge,
     get_template_muscle_svg,
 )
+from garmin import get_garmin_data, render_garmin_widget_html, get_garmin_insight
 
 # ------------------------------------
 # Page Config
@@ -63,11 +68,105 @@ def _css_text():
         return ""
 
 
-def render_svg_html(html: str, height: int = 200):
+def render_svg_html(html, height=200):
     """Render HTML containing SVG using components.html for reliable display."""
     css = _css_text()
-    full = f'<html><head><style>{css}</style></head><body style="margin:0;padding:0;direction:rtl;font-family:Segoe UI,Tahoma,Arial,sans-serif;">{html}</body></html>'
+    full = (
+        f'<html><head><style>{css}</style></head>'
+        f'<body style="margin:0;padding:0;direction:rtl;'
+        f'font-family:Segoe UI,Tahoma,Arial,sans-serif;'
+        f'background:transparent;">{html}</body></html>'
+    )
     components.html(full, height=height, scrolling=False)
+
+
+# ------------------------------------
+# Exercise Cards HTML Builder
+# ------------------------------------
+def _build_exercise_cards_html(template):
+    """Build inline exercise cards HTML for a template. NOT a dropdown."""
+    exercises = get_exercises_for_template(template)
+    warmup = get_warmup_exercises(template)
+    cooldown = get_cooldown_exercises(template)
+
+    html_parts = []
+
+    # Warmup section
+    if warmup:
+        html_parts.append(
+            '<div class="exercise-section-label warmup">🔥 חימום</div>'
+        )
+        for ex in warmup:
+            img_url = get_exercise_image_url(ex)
+            img_tag = (
+                f'<img class="exercise-card-img" src="{img_url}" '
+                f'alt="{ex["name"]}" onerror="this.style.display=\'none\'" />'
+                if img_url else ''
+            )
+            html_parts.append(
+                f'<div class="exercise-card">'
+                f'{img_tag}'
+                f'<div class="exercise-card-info">'
+                f'<div class="exercise-card-name">{ex["name"]}</div>'
+                f'<div class="exercise-card-detail">{ex.get("name_en", "")}</div>'
+                f'</div>'
+                f'<div class="exercise-card-badge">חימום</div>'
+                f'</div>'
+            )
+
+    # Main exercises
+    if exercises:
+        html_parts.append(
+            '<div class="exercise-section-label">💪 תרגילים עיקריים</div>'
+        )
+        for i, ex in enumerate(exercises, 1):
+            img_url = get_exercise_image_url(ex)
+            img_tag = (
+                f'<img class="exercise-card-img" src="{img_url}" '
+                f'alt="{ex["name"]}" onerror="this.style.display=\'none\'" />'
+                if img_url else ''
+            )
+            rest_txt = f' · מנוחה {ex["rest_sec"]}ש׳' if ex.get("rest_sec", 0) > 0 else ""
+            html_parts.append(
+                f'<div class="exercise-card">'
+                f'<div class="exercise-card-num">{i}</div>'
+                f'{img_tag}'
+                f'<div class="exercise-card-info">'
+                f'<div class="exercise-card-name">{ex["name"]}</div>'
+                f'<div class="exercise-card-detail">'
+                f'{ex["sets"]}×{ex["reps"]}{rest_txt}'
+                f'</div>'
+                f'</div>'
+                f'</div>'
+            )
+
+    # Cooldown section
+    if cooldown:
+        html_parts.append(
+            '<div class="exercise-section-label cooldown">🧊 שחרור</div>'
+        )
+        for ex in cooldown:
+            img_url = get_exercise_image_url(ex)
+            img_tag = (
+                f'<img class="exercise-card-img" src="{img_url}" '
+                f'alt="{ex["name"]}" onerror="this.style.display=\'none\'" />'
+                if img_url else ''
+            )
+            html_parts.append(
+                f'<div class="exercise-card">'
+                f'{img_tag}'
+                f'<div class="exercise-card-info">'
+                f'<div class="exercise-card-name">{ex["name"]}</div>'
+                f'<div class="exercise-card-detail">{ex.get("name_en", "")}</div>'
+                f'</div>'
+                f'<div class="exercise-card-badge" style="background:rgba(68,138,255,0.15);color:#448AFF;">שחרור</div>'
+                f'</div>'
+            )
+
+    if not html_parts:
+        return ""
+
+    return '<div class="exercise-list">' + "\n".join(html_parts) + '</div>'
 
 
 # ------------------------------------
@@ -84,6 +183,8 @@ def init_state():
         "user_id": None,
         "authenticated": False,
         "selected_muscle": None,
+        "garmin_data": None,
+        "coach_persuade_count": 0,
     }
     for key, val in defaults.items():
         if key not in st.session_state:
@@ -125,7 +226,7 @@ def render_auth():
                     st.session_state.authenticated = True
                     st.session_state.user_id = get_current_user_id()
                     st.rerun()
-            except Exception as e:
+            except Exception:
                 st.error("שגיאה בכניסה. בדוק אימייל וסיסמה.")
 
     with tab_signup:
@@ -137,7 +238,7 @@ def render_auth():
                 res = sign_up(email_s, password_s, name)
                 if res:
                     st.success("נרשמת בהצלחה! עכשיו תוכל להיכנס.")
-            except Exception as e:
+            except Exception:
                 st.error("שגיאה בהרשמה.")
 
 
@@ -172,6 +273,22 @@ def render_dashboard():
     st.markdown('<h2 class="section-title">📊 הדשבורד שלך</h2>',
                 unsafe_allow_html=True)
 
+    # --- Garmin Widget ---
+    garmin_data = get_garmin_data()
+    st.session_state.garmin_data = garmin_data
+    garmin_html = render_garmin_widget_html(garmin_data)
+    st.markdown(garmin_html, unsafe_allow_html=True)
+
+    # --- Proactive Coach Popup ---
+    proactive_msg = get_proactive_message(week_workouts, garmin_data)
+    if proactive_msg and not today_workouts:
+        st.markdown(
+            f'<div class="coach-popup">'
+            f'<div class="coach-popup-text">🤖 {proactive_msg}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
     # --- Today's Card with Muscle Image ---
     if today_workouts:
         w = today_workouts[0]
@@ -204,7 +321,6 @@ def render_dashboard():
     st.markdown('<h3 class="section-subtitle">השבוע בקצרה</h3>',
                 unsafe_allow_html=True)
 
-    # Build a map: date -> workout for the week
     workout_by_date = {}
     for w in week_workouts:
         d = w.get("workout_date", "")
@@ -251,7 +367,7 @@ def render_dashboard():
 
     # --- AI Suggestion ---
     energy = st.session_state.get("coach_energy", "medium") or "medium"
-    suggestion, template_id = get_ai_suggestion(week_workouts, energy)
+    suggestion, template_id = get_ai_suggestion(week_workouts, energy, garmin_data)
     template = get_template_by_id(template_id)
 
     st.markdown('<h3 class="section-subtitle">💡 הצעה עבורך</h3>',
@@ -281,6 +397,15 @@ def render_dashboard():
             unsafe_allow_html=True,
         )
 
+    # --- Garmin Insight ---
+    garmin_insight = get_garmin_insight(garmin_data)
+    if garmin_insight:
+        st.markdown(
+            f'<div class="glass-card" style="text-align:center;font-size:0.85rem;">'
+            f'⌚ {garmin_insight}</div>',
+            unsafe_allow_html=True,
+        )
+
     # --- Progress Chart ---
     month_workouts = get_month_workouts(user_id)
     if month_workouts:
@@ -290,7 +415,7 @@ def render_dashboard():
 
 
 def render_progress_chart(workouts):
-    """Simple line chart of workouts per day over the last 30 days."""
+    """Line chart of workouts per day over the last 30 days."""
     from collections import Counter
 
     dates_counter = Counter(w.get("workout_date", "") for w in workouts)
@@ -307,18 +432,20 @@ def render_progress_chart(workouts):
         x=chart_dates,
         y=chart_counts,
         mode="lines+markers",
-        line=dict(color="#4CAF50", width=3),
-        marker=dict(size=8, color="#4CAF50"),
+        line=dict(color="#00E676", width=3),
+        marker=dict(size=8, color="#00E676"),
         fill="tozeroy",
-        fillcolor="rgba(76, 175, 80, 0.1)",
+        fillcolor="rgba(0, 230, 118, 0.08)",
     ))
     fig.update_layout(
         height=250,
         margin=dict(l=10, r=10, t=10, b=30),
-        xaxis=dict(showgrid=False, tickformat="%d/%m"),
-        yaxis=dict(showgrid=True, dtick=1, title=""),
+        xaxis=dict(showgrid=False, tickformat="%d/%m", color="#8B949E"),
+        yaxis=dict(showgrid=True, dtick=1, title="", color="#8B949E",
+                   gridcolor="rgba(48,54,61,0.5)"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#8B949E"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -330,7 +457,6 @@ def render_muscle_picker(default_muscle=None):
     """Touch-friendly visual muscle group picker. Returns selected muscle."""
     current = st.session_state.get("selected_muscle", default_muscle)
 
-    # Show the currently selected muscle prominently
     if current:
         svg_big = get_muscle_svg(current, "כוח", size=100)
         render_svg_html(
@@ -341,9 +467,8 @@ def render_muscle_picker(default_muscle=None):
             height=200,
         )
 
-    # Grid of tappable muscle cards - 4 columns on top, 3 on bottom
-    row1 = MUSCLES[:4]  # חזה, גב, כתפיים, זרועות
-    row2 = MUSCLES[4:]  # בטן, רגליים, גוף מלא
+    row1 = MUSCLES[:4]
+    row2 = MUSCLES[4:]
 
     cols1 = st.columns(4)
     for idx, muscle in enumerate(row1):
@@ -404,31 +529,10 @@ def render_log_workout():
             height=130,
         )
 
-        # Show exercise list for this template
-        exercises = get_exercises_for_template(template)
-        if exercises:
-            with st.expander(f"תרגילים באימון ({len(exercises)})", expanded=False):
-                # Warmup
-                warmup = get_warmup_exercises(template)
-                if warmup:
-                    st.markdown("**חימום:**")
-                    for w_ex in warmup:
-                        st.markdown(f"- {w_ex['name']}")
-
-                # Main exercises
-                st.markdown("**תרגילים עיקריים:**")
-                for ex in exercises:
-                    rest_txt = f" | מנוחה {ex['rest_sec']}ש׳" if ex['rest_sec'] > 0 else ""
-                    st.markdown(
-                        f"- **{ex['name']}** — {ex['sets']}×{ex['reps']}{rest_txt}"
-                    )
-
-                # Cooldown
-                cooldown = get_cooldown_exercises(template)
-                if cooldown:
-                    st.markdown("**שחרור:**")
-                    for c_ex in cooldown:
-                        st.markdown(f"- {c_ex['name']}")
+        # Show exercise list as inline cards (NOT dropdown/expander)
+        exercises_html = _build_exercise_cards_html(template)
+        if exercises_html:
+            render_svg_html(exercises_html, height=_calc_exercise_list_height(template))
 
     # --- Workout Type ---
     workout_type = st.selectbox(
@@ -448,7 +552,6 @@ def render_log_workout():
     # --- Muscle Picker (visual, only for strength) ---
     target_muscle = None
     if training_type == "כוח":
-        # Set default from template
         default_m = None
         if template and template.get("target_muscle") in MUSCLES:
             default_m = template["target_muscle"]
@@ -459,7 +562,6 @@ def render_log_workout():
                     unsafe_allow_html=True)
         target_muscle = render_muscle_picker(default_m)
     else:
-        # Show cardio body illustration
         cardio_svg = get_muscle_svg(None, "סיבולת", size=100)
         render_svg_html(
             f'<div class="muscle-preview cardio">'
@@ -511,7 +613,6 @@ def render_log_workout():
 
         save_workout(st.session_state.user_id, workout)
 
-        # Coach encouragement
         msg = get_post_workout_message(difficulty, feeling)
         save_message(st.session_state.user_id, "coach", msg)
 
@@ -529,6 +630,17 @@ def render_log_workout():
             st.session_state.selected_template = None
             st.session_state.selected_muscle = None
             st.rerun()
+
+
+def _calc_exercise_list_height(template):
+    """Calculate height for the exercise list iframe."""
+    exercises = get_exercises_for_template(template)
+    warmup = get_warmup_exercises(template)
+    cooldown = get_cooldown_exercises(template)
+    total = len(exercises) + len(warmup) + len(cooldown)
+    # section labels count
+    sections = (1 if warmup else 0) + (1 if exercises else 0) + (1 if cooldown else 0)
+    return total * 65 + sections * 40 + 20
 
 
 # ------------------------------------
@@ -561,7 +673,6 @@ def render_templates():
             t = filtered[idx]
             with col:
                 tmpl_svg = get_template_muscle_svg(t, size=50)
-                # Build exercise summary
                 exercises = get_exercises_for_template(t)
                 ex_count = len(exercises)
                 ex_names = " · ".join(ex["name"] for ex in exercises[:3])
@@ -573,7 +684,7 @@ def render_templates():
                     f'<div class="template-card-body">{tmpl_svg}</div>'
                     f'<div class="template-name">{t["name"]}</div>'
                     f'<div class="template-meta">{t["location"]} · {t["training_type"]}</div>'
-                    f'<div class="template-exercises" style="font-size:11px;color:#888;margin-top:4px;direction:rtl;">{ex_names}</div>'
+                    f'<div class="template-exercises">{ex_names}</div>'
                     f'</div>',
                     height=170,
                 )
@@ -599,6 +710,13 @@ def render_coach():
     # Initialize coach messages
     if not st.session_state.coach_messages:
         greeting = get_greeting()
+
+        # Add Garmin context to greeting if available
+        garmin_data = st.session_state.get("garmin_data")
+        if garmin_data and garmin_data.get("body_battery", 0) > 0:
+            bb = garmin_data["body_battery"]
+            greeting += f"\n\n⌚ ה-Body Battery שלך: {bb}"
+
         st.session_state.coach_messages = [
             {"role": "coach", "content": greeting}
         ]
@@ -643,7 +761,6 @@ def render_coach():
                     )
                     save_message(user_id, "user", user_msg)
 
-                    # Coach responds
                     suggestion = get_workout_suggestion(level)
                     coach_msg = f"{suggestion}\n\nרוצה להתחיל אימון?"
                     st.session_state.coach_messages.append(
@@ -669,6 +786,7 @@ def render_coach():
                 )
                 save_message(user_id, "coach", coach_msg)
                 st.session_state.coach_step = "choose_type"
+                st.session_state.coach_persuade_count = 0
                 st.rerun()
 
         with cols[1]:
@@ -678,16 +796,28 @@ def render_coach():
                 )
                 save_message(user_id, "user", "לא היום")
 
-                coach_msg = get_no_workout_message()
-                st.session_state.coach_messages.append(
-                    {"role": "coach", "content": coach_msg}
-                )
-                save_message(user_id, "coach", coach_msg)
-                st.session_state.coach_step = "done"
-                st.rerun()
+                # Try to persuade (up to 2 times)
+                persuade_count = st.session_state.get("coach_persuade_count", 0)
+                if persuade_count < 2:
+                    coach_msg = get_persuasion_message()
+                    st.session_state.coach_persuade_count = persuade_count + 1
+                    st.session_state.coach_messages.append(
+                        {"role": "coach", "content": coach_msg}
+                    )
+                    save_message(user_id, "coach", coach_msg)
+                    # Stay on want_workout step
+                    st.rerun()
+                else:
+                    coach_msg = get_no_workout_message()
+                    st.session_state.coach_messages.append(
+                        {"role": "coach", "content": coach_msg}
+                    )
+                    save_message(user_id, "coach", coach_msg)
+                    st.session_state.coach_step = "done"
+                    st.session_state.coach_persuade_count = 0
+                    st.rerun()
 
     elif step == "choose_type":
-        # Suggest templates based on energy - with muscle illustrations
         energy = st.session_state.coach_energy or "medium"
         suggested_ids = get_template_suggestion(energy)
         suggested_templates = [
@@ -736,6 +866,7 @@ def render_coach():
             st.session_state.coach_step = "greeting"
             st.session_state.coach_messages = []
             st.session_state.coach_energy = None
+            st.session_state.coach_persuade_count = 0
             st.rerun()
 
 

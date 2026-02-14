@@ -4,12 +4,12 @@ Inline SVG body maps with highlighted muscle groups.
 Each function returns an HTML string with an embedded SVG.
 """
 
-# Highlight color for active muscle
-_ACTIVE = "#4CAF50"
-_ACTIVE_LIGHT = "#81C784"
-_BODY = "#D7CCC8"
-_BODY_OUTLINE = "#8D6E63"
-_CARDIO = "#EF5350"
+# Dark mode colors
+_ACTIVE = "#00E676"
+_ACTIVE_LIGHT = "#69F0AE"
+_BODY = "#30363D"
+_BODY_OUTLINE = "#484F58"
+_CARDIO = "#FF5252"
 
 # Base body outline paths (front view, simplified anatomical figure)
 _HEAD = '<ellipse cx="100" cy="30" rx="16" ry="20" />'
@@ -76,9 +76,9 @@ _CARDIO_ZONE = [
 ]
 
 
-def _build_svg(muscle: str, size: int = 120, active_color: str = _ACTIVE) -> str:
+def _build_svg(muscle, size=120, active_color=_ACTIVE):
     """Build a complete SVG body map with a highlighted muscle group."""
-    dark = active_color.replace("50", "30") if "50" in active_color else "#2E7D32"
+    dark = active_color.replace("76", "50") if "76" in active_color else "#1B5E20"
 
     body_parts = f"""
     <g fill="{_BODY}" stroke="{_BODY_OUTLINE}" stroke-width="1.5" stroke-linejoin="round">
@@ -108,7 +108,7 @@ def _build_svg(muscle: str, size: int = 120, active_color: str = _ACTIVE) -> str
     return svg
 
 
-def _build_cardio_svg(size: int = 120) -> str:
+def _build_cardio_svg(size=120):
     """Build SVG for cardio/endurance workouts (heart + legs)."""
     body_parts = f"""
     <g fill="{_BODY}" stroke="{_BODY_OUTLINE}" stroke-width="1.5" stroke-linejoin="round">
@@ -137,20 +137,18 @@ def _build_cardio_svg(size: int = 120) -> str:
     return svg
 
 
-def get_muscle_svg(muscle: "str | None", training_type: str = "כוח",
-                   size: int = 120) -> str:
+def get_muscle_svg(muscle, training_type="כוח", size=120):
     """Get the SVG illustration for a given muscle/training type."""
     if training_type == "סיבולת" or muscle is None:
         return _build_cardio_svg(size)
     return _build_svg(muscle, size)
 
 
-def get_muscle_card_html(muscle: str, is_selected: bool = False,
-                         size: int = 80) -> str:
+def get_muscle_card_html(muscle, is_selected=False, size=80):
     """Get a complete HTML card with SVG + label for the muscle picker."""
-    border_color = _ACTIVE if is_selected else "#E0E0E0"
-    bg = "#E8F5E9" if is_selected else "#FFFFFF"
-    shadow = "0 4px 16px rgba(76,175,80,0.25)" if is_selected else "0 2px 8px rgba(0,0,0,0.06)"
+    border_color = _ACTIVE if is_selected else "#30363D"
+    bg = "rgba(0,230,118,0.1)" if is_selected else "#161B22"
+    shadow = "0 0 16px rgba(0,230,118,0.25)" if is_selected else "0 2px 8px rgba(0,0,0,0.2)"
     check = '<span class="muscle-check">✓</span>' if is_selected else ""
 
     svg = _build_svg(muscle, size)
@@ -173,7 +171,7 @@ def get_muscle_card_html(muscle: str, is_selected: bool = False,
     </div>"""
 
 
-def get_workout_muscle_badge(workout: dict, size: int = 50) -> str:
+def get_workout_muscle_badge(workout, size=50):
     """Small inline muscle badge for dashboard cards."""
     muscle = workout.get("target_muscle")
     training_type = workout.get("training_type", "כוח")
@@ -181,7 +179,7 @@ def get_workout_muscle_badge(workout: dict, size: int = 50) -> str:
     return f'<div class="muscle-badge">{svg}</div>'
 
 
-def get_template_muscle_svg(template: dict, size: int = 60) -> str:
+def get_template_muscle_svg(template, size=60):
     """SVG for template cards."""
     muscle = template.get("target_muscle")
     training_type = template.get("training_type", "כוח")

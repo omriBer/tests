@@ -68,53 +68,107 @@ URL: https://fqrspr97o8vk4rz8muhpev.streamlit.app/
   - כיסוי ציוד: bodyweight (72), dumbbell (24), machine (12), barbell (5), bands (7)
   - כל תרגיל כולל: שם עברי, שם אנגלי, שריר ראשי/משני, ציוד, מיקומים, רמה, הוראות בעברית
 - `exercises_data.py` - מודול Python לטעינת וחיפוש תרגילים
-  - `load_exercises()` - טעינה עם cache
-  - `get_exercise(id)` - תרגיל בודד
-  - `search_exercises(muscle, equipment, location, level)` - סינון
-  - `get_exercises_for_template(template)` - תרגילים מלאים לתבנית
-  - `get_warmup_exercises()` / `get_cooldown_exercises()` - חימום/שחרור
-  - `get_exercise_image_url()` - URL לתמונה מ-free-exercise-db
 
 **קבצים ששודרגו:**
-- `templates_data.py` - שודרג מ-30 ל-**46 תבניות**, כל תבנית כוללת:
-  - `exercises` - רשימת תרגילים עם sets, reps, rest_sec
-  - `warmup` - רשימת תרגילי חימום
-  - `cooldown` - רשימת תרגילי שחרור
-  - תבניות חדשות: חזה ביתי, גב ביתי, גומיות, זרועות חדר כושר, בטן חדר כושר, כוח בחוץ, HIIT בחוץ, התעוררות, כתפיים+משקולות, חזה+גב, רגליים+משקולות, ישבן ביתי, אימון משפחתי, הליכה 45 דק, עליון/תחתון
+- `templates_data.py` - שודרג מ-30 ל-**46 תבניות** עם exercises, warmup, cooldown
 
-- `app.py` - שינויים:
-  - ייבוא `exercises_data` module
-  - `render_templates()` - כל כרטיס תבנית מציג שמות תרגילים (3 ראשונים + ספירה)
-  - `render_log_workout()` - כשתבנית נבחרה, מוצגת רשימת תרגילים מלאה ב-expander (חימום, עיקריים, שחרור)
+### 9. שדרוג UI מלא - Dark Mode 2026
+**תאריך:** 2026-02-14
 
-- `coach.py` - שינויים:
-  - `get_ai_suggestion()` - ההצעה כוללת שמות תרגילים ספציפיים ("כולל: שכיבות סמיכה, סקוואט, פלאנק")
+**עיצוב חדש:**
+- **Dark Mode** מלא עם ערכת צבעים: ירוק (#00E676) על רקע כהה (#0D1117)
+- **Glassmorphism** - כרטיסים שקופים עם backdrop-filter blur
+- **אנימציות** - fadeIn, slideUp, glow על כרטיסים
+- **Mobile-first** - responsive עם breakpoints ל-768px
 
-**אימות:**
-- כל exercise_id בתבניות מצביע על תרגיל קיים ב-JSON (100% תקין)
-- סינון לפי muscle/equipment/location עובד
-- 120 תרגילים, 46 תבניות
+**קבצים שהשתנו:**
+- `.streamlit/config.toml` - ערכת צבעים כהה
+- `styles.css` - **נכתב מחדש לחלוטין** (~730 שורות):
+  - CSS Variables לכל הצבעים
+  - `.glass-card` - כרטיס glassmorphism
+  - `.exercise-card` - כרטיסי תרגילים **inline** (לא dropdown!)
+  - `.exercise-card-img` - תמונות תרגילים מ-free-exercise-db
+  - `.garmin-widget` + `.garmin-stats` - וידג'ט Garmin
+  - `.coach-popup` - הודעה פרואקטיבית עם אנימציית glow
+  - `.tag`, `.tag-blue`, `.tag-orange` - badges צבעוניים
+  - כפתורי gradient ירוקים
+  - Scrollbar כהה
+- `muscles.py` - צבעים עודכנו ל-dark mode:
+  - `_ACTIVE`: #4CAF50 → #00E676
+  - `_BODY`: #D7CCC8 → #30363D
+  - `_BODY_OUTLINE`: #8D6E63 → #484F58
+  - `get_muscle_card_html()` - רקע כהה, borders כהים, glow ירוק בנבחר
+
+**app.py - שינויים עיקריים:**
+- **תרגילים מוצגים כ-inline cards** (לא expander/dropdown!) דרך `_build_exercise_cards_html()`
+- כל כרטיס תרגיל כולל: מספר, תמונה מ-free-exercise-db, שם, sets×reps, זמן מנוחה
+- חלוקה לסקציות: חימום (כתום), עיקריים, שחרור (כחול)
+- `_calc_exercise_list_height()` - חישוב גובה דינמי ל-iframe
+- גרף ההתקדמות עודכן לצבעים כהים
+- Garmin widget בדשבורד
+- הודעה פרואקטיבית מהקואצ' בדשבורד
+- Garmin insight בדשבורד
+
+### 10. אינטגרציית Garmin Connect
+**תאריך:** 2026-02-14
+
+**קובץ חדש: `garmin.py`**
+- `get_garmin_data()` - מביא נתוני בריאות: Body Battery, שינה, סטרס, צעדים, דופק, קלוריות
+- `render_garmin_widget_html()` - HTML widget עם 4 סטטיסטיקות צבעוניות
+- `get_garmin_insight()` - תובנה בעברית לפי הנתונים
+- `get_energy_suggestion()` - המלצת רמת אנרגיה לפי Garmin
+- **Fallback לדמו** כשאין credentials (מציג נתונים לדוגמה)
+- **חיבור:** צריך להוסיף `GARMIN_EMAIL` ו-`GARMIN_PASSWORD` ב-Streamlit Secrets
+
+**`requirements.txt`** - נוסף `garminconnect>=0.2.0`
+
+### 11. שדרוג קואצ' חכם
+**תאריך:** 2026-02-14
+
+**coach.py - שדרוגים:**
+- **שכנוע (Persuasion):** כשמשתמש אומר "לא היום", הקואצ' מנסה לשכנע עד 2 פעמים
+  - "מה דעתך על 10 דקות בלבד?"
+  - "אפילו 5 מתיחות במקום יעשו פלאים"
+  - אחרי 2 ניסיונות - מכבד את ההחלטה
+- **הודעות פרואקטיביות** (`get_proactive_message()`):
+  - לפי Garmin: Body Battery גבוה/נמוך, שינה גרועה, סטרס גבוה
+  - לפי הקשר: לא התאמן היום, רצף בסכנה, אתמול היה אימון כבד
+  - מוצגות כ-popup עם glow בדשבורד
+- **מודעות לשרירים:** עוקב אחרי אילו שרירים עובדו השבוע, מציע להשלים חסרים
+- **אינטגרציית Garmin:** `get_ai_suggestion()` מתחשב ב-Body Battery
+  - BB >= 70 → מעלה אנרגיה ל-high
+  - BB < 35 → מוריד ל-low
+- **קואצ' בצ'אט:** ברכה כוללת Body Battery מ-Garmin
+
+**app.py - שינויים לקואצ':**
+- `coach_persuade_count` ב-session state
+- כפתור "לא היום" מפעיל שכנוע לפני ויתור
+- Garmin data מועבר ל-coach בכל מקום
 
 ## משימות בתור (לפי סדר מומלץ)
 1. ~~יצירת JSON תרגילים מפורט ותבניות אימון~~ ✅ הושלם
-2. שדרוג הקואצ' - שיח חכם ופרואקטיבי + Garmin
-3. החלפת איורי SVG בתמונות איכותיות
-4. מתיחת פנים לאפליקציה - עיצוב 2026
+2. ~~שדרוג הקואצ' - שיח חכם ופרואקטיבי + Garmin~~ ✅ הושלם
+3. ~~תמונות תרגילים מ-free-exercise-db~~ ✅ הושלם (משולבות בכרטיסי תרגילים)
+4. ~~מתיחת פנים לאפליקציה - עיצוב 2026~~ ✅ הושלם (Dark Mode + Glassmorphism)
+5. ~~אינטגרציית Garmin Connect~~ ✅ הושלם (עם fallback לדמו)
 
 ## בעיות פתוחות
-- לבדוק שהאיורים מרונדרים נכון אחרי הדיפלוי האחרון (components.html)
 - אין חיבור ל-Supabase (רץ במצב דמו)
+- Garmin רץ בדמו - צריך להוסיף GARMIN_EMAIL + GARMIN_PASSWORD ב-Secrets
+- לבדוק שתמונות התרגילים מ-free-exercise-db נטענות (תלוי ב-GitHub raw URLs)
+- לבדוק שה-dark mode מרונדר נכון בכל הדפדפנים
 
 ## מבנה הפרויקט
 | קובץ | תפקיד |
 |---|---|
-| `app.py` | אפליקציה ראשית - Streamlit UI, ניווט, 4 דפים |
+| `app.py` | אפליקציה ראשית - UI, ניווט, 4 דפים, exercise cards, Garmin widget |
 | `config.py` | קבועים - סוגי אימונים, שרירים, מיקומים |
 | `database.py` | שכבת נתונים - Supabase / מצב דמו |
-| `coach.py` | לוגיקת קואצ' - הודעות, הצעות, תובנות + שמות תרגילים |
-| `muscles.py` | איורי SVG של קבוצות שרירים |
+| `coach.py` | קואצ' חכם - שכנוע, פרואקטיבי, Garmin-aware, מודע לשרירים |
+| `garmin.py` | אינטגרציית Garmin Connect - Body Battery, שינה, סטרס, צעדים |
+| `muscles.py` | איורי SVG של קבוצות שרירים (dark mode) |
 | `templates_data.py` | 46 תבניות אימון עם תרגילים מפורטים |
 | `exercises_db.json` | מאגר 120 תרגילים (JSON) |
-| `exercises_data.py` | מודול טעינה וחיפוש תרגילים |
+| `exercises_data.py` | מודול טעינה וחיפוש תרגילים + URLs לתמונות |
+| `styles.css` | עיצוב CSS - Dark Mode, Glassmorphism, RTL, mobile-first |
 | `schema.sql` | סכמת DB ל-Supabase |
-| `styles.css` | עיצוב CSS - ירוק/כחול, RTL, mobile-first |

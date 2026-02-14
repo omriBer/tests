@@ -1,6 +1,6 @@
 """
-FitnessMate - Coach (Chatbot Logic)
-Rule-based coach that guides users through workout logging with encouragement.
+FitnessMate - Smart Coach
+Proactive, persuasive, history-aware coach with Garmin integration.
 """
 
 import random
@@ -36,6 +36,42 @@ ENCOURAGEMENTS_NO_WORKOUT = [
     "בסדר גמור! הגוף צריך לנוח. מחר? 🌱",
     "יום חופש? לגיטימי! תחזור כשתרגיש מוכן 😊",
 ]
+
+# Persuasion messages when user says "no"
+PERSUASION_MESSAGES = [
+    "הבנתי... אבל מה דעתך על 10 דקות בלבד? זה כל מה שצריך כדי להרגיש טוב יותר! 🙏",
+    "אוקיי, אבל תדע שגם 15 דקות הליכה יכולות לעשות הבדל ענק! מה אומר? 🚶",
+    "שמע, אפילו 5 מתיחות קצרות במקום יעשו פלאים. רוצה לנסות? 🧘",
+    "אני שומע אותך. מה דעתך לפחות על כמה דקות מתיחות לפני שינה? זה ממש עוזר 💤",
+]
+
+# Proactive messages based on context
+PROACTIVE_MESSAGES = {
+    "morning_no_workout": [
+        "שם לב שעוד לא התאמנת היום. יום נפלא לזוז! 💚",
+        "בוקר טוב! גוף שזז בבוקר מרגיש מדהים כל היום 🌅",
+    ],
+    "streak_risk": [
+        "את/ה ברצף! אל תפסיק עכשיו, אפילו אימון קצר ישמור על הרצף 🔥",
+        "הרצף שלך בסכנה! בוא נשמור עליו עם אימון קצר 💪",
+    ],
+    "rest_day_needed": [
+        "אתמול היה אימון כבד. מה דעתך על משהו קל היום? 🧘",
+        "שמתי לב שהגוף שלך עובד קשה. יום יוגה/מתיחות? 🙏",
+    ],
+    "garmin_high_battery": [
+        "ה-Body Battery שלך גבוה! יום מושלם לאימון אינטנסיבי 🔋💪",
+    ],
+    "garmin_low_battery": [
+        "ה-Body Battery שלך קצת נמוך. מה דעתך על הליכה קלה או יוגה? 🔋🧘",
+    ],
+    "garmin_poor_sleep": [
+        "השינה לא הייתה מושלמת. אולי אימון קל שיעזור להירגע? 😴",
+    ],
+    "garmin_high_stress": [
+        "רמת הסטרס גבוהה היום. אימון הוא אחד הדברים הטובים ביותר להורדת סטרס! 🧘",
+    ],
+}
 
 SUGGESTIONS_BY_ENERGY = {
     "high": [
@@ -79,16 +115,16 @@ def get_energy_question():
     return "איך רמת האנרגיה שלך?"
 
 
-def get_workout_suggestion(energy_level: str):
+def get_workout_suggestion(energy_level):
     suggestions = SUGGESTIONS_BY_ENERGY.get(energy_level, SUGGESTIONS_BY_ENERGY["medium"])
     return random.choice(suggestions)
 
 
-def get_template_suggestion(energy_level: str):
+def get_template_suggestion(energy_level):
     return TEMPLATE_SUGGESTIONS_BY_ENERGY.get(energy_level, TEMPLATE_SUGGESTIONS_BY_ENERGY["medium"])
 
 
-def get_post_workout_message(difficulty: int, feeling: str):
+def get_post_workout_message(difficulty, feeling):
     base = random.choice(ENCOURAGEMENTS_POST_WORKOUT)
     if difficulty >= 8:
         extra = " אימון קשוח! 💪🔥"
@@ -99,7 +135,7 @@ def get_post_workout_message(difficulty: int, feeling: str):
     return base + extra
 
 
-def get_streak_message(streak_days: int):
+def get_streak_message(streak_days):
     if streak_days >= 7:
         return f"שבוע שלם! {streak_days} ימים ברצף! 🏆🔥"
     elif streak_days >= 3:
@@ -113,7 +149,56 @@ def get_no_workout_message():
     return random.choice(ENCOURAGEMENTS_NO_WORKOUT)
 
 
-def get_weekly_insight(week_workouts: list):
+def get_persuasion_message():
+    """Get a persuasion message when user says no to working out."""
+    return random.choice(PERSUASION_MESSAGES)
+
+
+def get_proactive_message(week_workouts, garmin_data=None):
+    """Generate a proactive coach message based on context."""
+    hour = datetime.now().hour
+    today_str = date.today().isoformat()
+    trained_today = any(w.get("workout_date") == today_str for w in week_workouts)
+    count = len(week_workouts)
+
+    # Check Garmin data first
+    if garmin_data and garmin_data.get("body_battery", 0) > 0:
+        bb = garmin_data.get("body_battery", 50)
+        stress = garmin_data.get("stress", 30)
+        sleep = garmin_data.get("sleep_hours", 7)
+
+        if not trained_today:
+            if bb >= 70:
+                return random.choice(PROACTIVE_MESSAGES["garmin_high_battery"])
+            elif bb < 35:
+                return random.choice(PROACTIVE_MESSAGES["garmin_low_battery"])
+
+            if sleep < 6:
+                return random.choice(PROACTIVE_MESSAGES["garmin_poor_sleep"])
+
+            if stress >= 50:
+                return random.choice(PROACTIVE_MESSAGES["garmin_high_stress"])
+
+    # Non-Garmin proactive messages
+    if not trained_today and hour >= 10 and hour <= 20:
+        if count >= 3:
+            return random.choice(PROACTIVE_MESSAGES["streak_risk"])
+        return random.choice(PROACTIVE_MESSAGES["morning_no_workout"])
+
+    # Check if yesterday was hard
+    if week_workouts:
+        yesterday = (date.today().replace(day=date.today().day)).isoformat()
+        yesterday_workouts = [w for w in week_workouts
+                              if w.get("workout_date") == yesterday]
+        if yesterday_workouts:
+            max_diff = max(w.get("difficulty", 5) for w in yesterday_workouts)
+            if max_diff >= 8:
+                return random.choice(PROACTIVE_MESSAGES["rest_day_needed"])
+
+    return None
+
+
+def get_weekly_insight(week_workouts):
     count = len(week_workouts)
     if count == 0:
         return "השבוע עוד לא התאמנת. בוא נתחיל! 🚀"
@@ -125,7 +210,7 @@ def get_weekly_insight(week_workouts: list):
         return f"שבוע מטורף! {count} אימונים! אתה מכונה! 🔥🏆"
 
 
-def _get_exercise_names_for_template_id(template_id: str, limit: int = 3):
+def _get_exercise_names_for_template_id(template_id, limit=3):
     """Get Hebrew exercise names for a template ID."""
     from templates_data import get_template_by_id
     template = get_template_by_id(template_id)
@@ -136,13 +221,21 @@ def _get_exercise_names_for_template_id(template_id: str, limit: int = 3):
     return ", ".join(names)
 
 
-def get_ai_suggestion(week_workouts: list, energy_level: str = "medium"):
-    """Generate a simple AI suggestion based on this week's workouts."""
+def get_ai_suggestion(week_workouts, energy_level="medium", garmin_data=None):
+    """Generate a smart AI suggestion based on workouts, energy, and Garmin data."""
     count = len(week_workouts)
     types_done = [w.get("workout_type", "") for w in week_workouts]
     locations_done = [w.get("location", "") for w in week_workouts]
 
-    # Suggest variety
+    # Adjust energy based on Garmin if available
+    if garmin_data and garmin_data.get("body_battery", 0) > 0:
+        bb = garmin_data.get("body_battery", 50)
+        if bb >= 70 and energy_level != "low":
+            energy_level = "high"
+        elif bb < 35:
+            energy_level = "low"
+
+    # No workouts yet this week
     if count == 0:
         suggestion = get_workout_suggestion(energy_level)
         template_id = random.choice(get_template_suggestion(energy_level))
@@ -151,11 +244,16 @@ def get_ai_suggestion(week_workouts: list, energy_level: str = "medium"):
             suggestion += f"\nכולל: {ex_names}"
         return suggestion, template_id
 
-    # Check what's missing
+    # Check what's missing for variety
     all_home = all(loc == "בבית" for loc in locations_done)
     all_outdoor = all(loc == "בחוץ" for loc in locations_done)
     has_strength = any(w.get("training_type") == "כוח" for w in week_workouts)
     has_cardio = any(w.get("training_type") == "סיבולת" for w in week_workouts)
+
+    # Track muscles worked this week
+    muscles_done = [w.get("target_muscle") for w in week_workouts if w.get("target_muscle")]
+    muscles_missing = [m for m in ["חזה", "גב", "כתפיים", "זרועות", "בטן", "רגליים"]
+                       if m not in muscles_done]
 
     if all_home and count >= 2:
         suggestion = "כל השבוע בבית - מה דעתך לצאת החוצה? ריצה או כדורגל? 🌳"
@@ -172,6 +270,10 @@ def get_ai_suggestion(week_workouts: list, energy_level: str = "medium"):
     elif count >= 5:
         suggestion = "שבוע אינטנסיבי! אולי יום מתיחות קל? 🧘"
         template_id = "stretch-15"
+    elif muscles_missing and has_strength:
+        missing = muscles_missing[0]
+        suggestion = f"עוד לא עבדת על {missing} השבוע. בוא נשלים! 💪"
+        template_id = random.choice(get_template_suggestion(energy_level))
     else:
         suggestion = get_workout_suggestion(energy_level)
         template_id = random.choice(get_template_suggestion(energy_level))
