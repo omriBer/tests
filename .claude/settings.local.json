@@ -4,7 +4,10 @@
       "WebSearch",
       "WebFetch(domain:www.hevyapp.com)",
       "WebFetch(domain:www.prpath.app)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(dir:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)"
     ]
   }
 }
