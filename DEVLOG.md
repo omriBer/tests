@@ -145,30 +145,61 @@ URL: https://2zqfpmejabsauqxbkbcwys.streamlit.app/
 - כפתור "לא היום" מפעיל שכנוע לפני ויתור
 - Garmin data מועבר ל-coach בכל מקום
 
+### 12. Tinder-Gym Overhaul
+**תאריך:** 2026-02-14
+
+**מקור דרישות:** `tasks.log.txt`
+
+**מטרה:** הפיכת האפליקציה מטופס תיעוד ל-Workout Matcher בסגנון Tinder
+
+**5 שלבי State Machine:**
+1. **Context Selection** - כרטיסים ויזואליים: Microwave Hero, Zoom-Proof Core, Kid-Toss, Home, Gym, Outdoor
+2. **Gear Selection** - Just Me / Basic Gear / Full Gym (דילוג אוטומטי ב-microwave/zoom)
+3. **Muscle Map** - SVG אינטראקטיבי + כפתורי "גוף מלא" / "הפתעה"
+4. **Workout Player** - GIF גדול + HUD overlays + DO/DON'T tips + ניווט הבא/קודם
+5. **Summary** - Ghost Coach, סטטיסטיקות, streak counter, אימון נשמר אוטומטית
+
+**עקרונות:**
+- אפס טפסים, אפס text inputs, אפס sliders
+- GIF hero (80% מהמסך) מ-free-exercise-db
+- Ghost Coach - הודעה אחת חזקה בסוף אימון
+- Silent Garmin - Body Battery נמוך → הכרטיסים הקלים מקבלים glow
+
+**קבצים שהשתנו:**
+- `app.py` - **נכתב מחדש לחלוטין** - State Machine עם 5 מצבים, הוסרו 4 דפים ישנים
+- `styles.css` - **נכתב מחדש** - כרטיסי context/gear, player layout, DO/DON'T tips, summary screen
+- `templates_data.py` - הוספת 10 micro-templates (microwave, zoom, kid), שדות context+gear ל-55 תבניות, CONTEXTS/GEARS dicts, match_templates()
+- `exercises_data.py` - get_exercise_gif_url(), get_exercise_tips(), 15 DO/DON'T tips
+- `coach.py` - get_ghost_coach_message(), הודעות לפי context
+
 ## משימות בתור (לפי סדר מומלץ)
 1. ~~יצירת JSON תרגילים מפורט ותבניות אימון~~ ✅ הושלם
 2. ~~שדרוג הקואצ' - שיח חכם ופרואקטיבי + Garmin~~ ✅ הושלם
-3. ~~תמונות תרגילים מ-free-exercise-db~~ ✅ הושלם (משולבות בכרטיסי תרגילים)
-4. ~~מתיחת פנים לאפליקציה - עיצוב 2026~~ ✅ הושלם (Dark Mode + Glassmorphism)
-5. ~~אינטגרציית Garmin Connect~~ ✅ הושלם (עם fallback לדמו)
+3. ~~תמונות תרגילים מ-free-exercise-db~~ ✅ הושלם
+4. ~~מתיחת פנים לאפליקציה - עיצוב 2026~~ ✅ הושלם
+5. ~~אינטגרציית Garmin Connect~~ ✅ הושלם
+6. ~~Tinder-Gym: Context/Gear/Muscle selection cards~~ ✅ הושלם
+7. ~~Workout Player עם GIF + HUD + טיימר~~ ✅ הושלם
+8. ~~Ghost Coach + Summary screen~~ ✅ הושלם
+9. Silent Garmin - auto-highlight easy cards (בסיסי מומש, לשפר) ⏳
 
 ## בעיות פתוחות
 - אין חיבור ל-Supabase (רץ במצב דמו)
 - Garmin רץ בדמו - צריך להוסיף GARMIN_EMAIL + GARMIN_PASSWORD ב-Secrets
-- לבדוק שתמונות התרגילים מ-free-exercise-db נטענות (תלוי ב-GitHub raw URLs)
+- לבדוק שה-GIFs מ-free-exercise-db נטענים (תלוי ב-GitHub raw URLs)
 - לבדוק שה-dark mode מרונדר נכון בכל הדפדפנים
 
 ## מבנה הפרויקט
 | קובץ | תפקיד |
 |---|---|
-| `app.py` | אפליקציה ראשית - UI, ניווט, 4 דפים, exercise cards, Garmin widget |
+| `app.py` | State Machine - Context→Gear→Muscle→Player→Summary (אפס טפסים) |
 | `config.py` | קבועים - סוגי אימונים, שרירים, מיקומים |
 | `database.py` | שכבת נתונים - Supabase / מצב דמו |
-| `coach.py` | קואצ' חכם - שכנוע, פרואקטיבי, Garmin-aware, מודע לשרירים |
+| `coach.py` | Ghost Coach + קואצ' חכם - הודעות לפי context, Garmin-aware |
 | `garmin.py` | אינטגרציית Garmin Connect - Body Battery, שינה, סטרס, צעדים |
 | `muscles.py` | איורי SVG של קבוצות שרירים (dark mode) |
-| `templates_data.py` | 46 תבניות אימון עם תרגילים מפורטים |
+| `templates_data.py` | 55 תבניות אימון עם context/gear, match_templates() |
 | `exercises_db.json` | מאגר 120 תרגילים (JSON) |
-| `exercises_data.py` | מודול טעינה וחיפוש תרגילים + URLs לתמונות |
-| `styles.css` | עיצוב CSS - Dark Mode, Glassmorphism, RTL, mobile-first |
+| `exercises_data.py` | מודול טעינה + GIF URLs + DO/DON'T tips |
+| `styles.css` | Tinder-Gym UI - Dark Glassmorphism, Player, Cards, Summary |
 | `schema.sql` | סכמת DB ל-Supabase |

@@ -102,3 +102,89 @@ def get_exercise_image_url(exercise):
     if not image_id:
         return None
     return f"{EXERCISE_IMAGE_BASE_URL}/{image_id}/0.jpg"
+
+
+def get_exercise_gif_url(exercise):
+    """Get URL for exercise GIF from free-exercise-db.
+
+    Returns a URL string or None if no image_id.
+    GIFs show animated exercise demonstration.
+    """
+    image_id = exercise.get("image_id")
+    if not image_id:
+        return None
+    # free-exercise-db stores GIFs as 0.gif alongside the jpg
+    return f"{EXERCISE_IMAGE_BASE_URL}/{image_id}/0.gif"
+
+
+# DO/DON'T tips for common exercises (Hebrew)
+EXERCISE_TIPS = {
+    "pushup_standard": {
+        "do": "שמור על גוף ישר כמו קרש",
+        "dont": "אל תרשה לירכיים לצנוח",
+    },
+    "squat_bodyweight": {
+        "do": "ברכיים בכיוון האצבעות",
+        "dont": "אל תרים את העקבים מהרצפה",
+    },
+    "plank": {
+        "do": "כווץ בטן ושמור נשימה יציבה",
+        "dont": "אל תרים את הישבן למעלה",
+    },
+    "lunges": {
+        "do": "ברך אחורית כמעט נוגעת ברצפה",
+        "dont": "אל תדחוף ברך קדמית מעבר לאצבעות",
+    },
+    "crunch": {
+        "do": "הרם כתפיים, לא צוואר",
+        "dont": "אל תמשוך את הצוואר עם הידיים",
+    },
+    "mountain_climber": {
+        "do": "שמור ידיים מתחת לכתפיים",
+        "dont": "אל תרים את הישבן גבוה מדי",
+    },
+    "burpees": {
+        "do": "תנועה רציפה ומבוקרת",
+        "dont": "אל תדלג על השכיבת סמיכה",
+    },
+    "glute_bridge": {
+        "do": "סחוט ישבן בנקודה העליונה",
+        "dont": "אל תקשת את הגב התחתון",
+    },
+    "bicep_curl_dumbbell": {
+        "do": "מרפקים צמודים לגוף",
+        "dont": "אל תנדנד את הגוף לתנופה",
+    },
+    "bench_press_dumbbell": {
+        "do": "כתפיים נעוצות בספסל",
+        "dont": "אל תרים את הגב מהספסל",
+    },
+    "lat_pulldown": {
+        "do": "משוך לכיוון החזה, לא מאחורי הצוואר",
+        "dont": "אל תישען אחורה יותר מדי",
+    },
+    "shoulder_press_dumbbell": {
+        "do": "דחוף ישר למעלה, לא קדימה",
+        "dont": "אל תקשת את הגב",
+    },
+    "deadlift_dumbbell": {
+        "do": "גב ישר, ירכיים דוחפות אחורה",
+        "dont": "אל תעגל את הגב",
+    },
+    "russian_twist": {
+        "do": "סובב את כל פלג הגוף העליון",
+        "dont": "אל תזיז רק את הידיים",
+    },
+    "jump_squat": {
+        "do": "נחות רך על כריות כפות הרגליים",
+        "dont": "אל תנחת על ברכיים נעולות",
+    },
+}
+
+
+def get_exercise_tips(exercise):
+    """Get DO/DON'T tips for an exercise.
+
+    Returns dict with 'do' and 'dont' keys, or None.
+    """
+    return EXERCISE_TIPS.get(exercise.get("id"))

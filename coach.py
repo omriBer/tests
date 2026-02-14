@@ -221,7 +221,52 @@ def _get_exercise_names_for_template_id(template_id, limit=3):
     return ", ".join(names)
 
 
-def get_ai_suggestion(week_workouts, energy_level="medium", garmin_data=None):
+GHOST_COACH_MESSAGES = [
+    "אלוף! עוד אימון בכיס. הגוף מודה לך!",
+    "סגרת את זה! כל אימון מקרב אותך למטרה.",
+    "מכונה! ההתמדה שלך מרשימה.",
+    "נהדר! הגוף שלך כבר מרגיש את ההבדל.",
+    "עבודה! עוד יום של גדילה.",
+]
+
+GHOST_COACH_BY_CONTEXT = {
+    "microwave": "2 דקות שעשו את ההבדל! גם מיקרו-אימון סופר.",
+    "zoom": "שברת את הישיבה! הגב והצוואר מודים לך.",
+    "kid": "אימון משפחתי = דוגמה אישית מהטובות!",
+    "home": "ביתי אבל אמיתי! כל הכבוד.",
+    "gym": "חדר כושר ✓ עוד אימון מקצועי מאחוריך!",
+    "outdoor": "אוויר צח + תנועה = השילוב המנצח!",
+}
+
+
+def get_ghost_coach_message(context=None, exercises_count=0, duration=0,
+                            muscle=None, garmin_data=None):
+    """Ghost Coach: one strong message after workout completion."""
+    parts = []
+
+    # Context-specific message
+    if context and context in GHOST_COACH_BY_CONTEXT:
+        parts.append(GHOST_COACH_BY_CONTEXT[context])
+    else:
+        parts.append(random.choice(GHOST_COACH_MESSAGES))
+
+    # Stats line
+    if exercises_count > 0 and duration > 0:
+        muscle_text = f" | {muscle}" if muscle else ""
+        parts.append(f"📊 {exercises_count} תרגילים · {duration} דק׳{muscle_text}")
+
+    # Garmin insight (silent)
+    if garmin_data and garmin_data.get("body_battery", 0) > 0:
+        bb = garmin_data.get("body_battery", 50)
+        if bb >= 60:
+            parts.append("⌚ Body Battery גבוה - ניצלת את היום!")
+        elif bb < 35:
+            parts.append("⌚ אפילו עם Body Battery נמוך - התמדה!")
+
+    return "\n".join(parts)
+
+
+
     """Generate a smart AI suggestion based on workouts, energy, and Garmin data."""
     count = len(week_workouts)
     types_done = [w.get("workout_type", "") for w in week_workouts]

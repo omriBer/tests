@@ -2,9 +2,216 @@
 FitnessMate - Workout Templates
 Quick-start templates for one-tap workout logging.
 Each template includes specific exercises with sets, reps and rest.
+Context: microwave, zoom, kid, home, gym, outdoor
+Gear: none, basic, full
 """
 
+# Context → gear mapping for matching
+CONTEXTS = {
+    "microwave": {"label": "🍿 Microwave Hero", "desc": "2 דקות בזמן המיקרו", "max_duration": 4},
+    "zoom": {"label": "💻 Zoom-Proof Core", "desc": "בזמן ישיבה/עבודה", "max_duration": 8},
+    "kid": {"label": "👶 Kid-Toss Cardio", "desc": "עם ילדים", "max_duration": 20},
+    "home": {"label": "🏠 Home Workout", "desc": "אימון ביתי", "max_duration": 60},
+    "gym": {"label": "🏋️ Gym Time", "desc": "חדר כושר", "max_duration": 90},
+    "outdoor": {"label": "🌳 Outdoor", "desc": "בחוץ", "max_duration": 60},
+}
+
+GEARS = {
+    "none": {"label": "✋ Just Me", "desc": "בלי ציוד"},
+    "basic": {"label": "🎒 Basic Gear", "desc": "משקולות קטנות / גומיות"},
+    "full": {"label": "🏋️ Full Gym", "desc": "מכשירים מלאים"},
+}
+
 TEMPLATES = [
+    # === MICRO WORKOUTS (2-4 min) ===
+    {
+        "id": "micro-stretch-2",
+        "name": "2 דק׳ מתיחות מיקרו",
+        "emoji": "🍿",
+        "workout_type": "אחר",
+        "training_type": "סיבולת",
+        "target_muscle": "גוף מלא",
+        "duration_minutes": 2,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "גמישות",
+        "context": "microwave",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "neck_stretch", "sets": 1, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "shoulder_stretch", "sets": 1, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "quad_stretch", "sets": 1, "reps": 1, "rest_sec": 0},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
+    {
+        "id": "micro-pushup-2",
+        "name": "2 דק׳ שכיבות סמיכה",
+        "emoji": "🍿",
+        "workout_type": "אימון ביתי",
+        "training_type": "כוח",
+        "target_muscle": "חזה",
+        "duration_minutes": 2,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "כוח",
+        "context": "microwave",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "pushup_standard", "sets": 2, "reps": 10, "rest_sec": 15},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
+    {
+        "id": "micro-squat-2",
+        "name": "2 דק׳ סקוואטים",
+        "emoji": "🍿",
+        "workout_type": "אימון ביתי",
+        "training_type": "כוח",
+        "target_muscle": "רגליים",
+        "duration_minutes": 2,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "כוח",
+        "context": "microwave",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "squat_bodyweight", "sets": 2, "reps": 12, "rest_sec": 15},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
+    {
+        "id": "micro-plank-2",
+        "name": "2 דק׳ פלאנק",
+        "emoji": "🍿",
+        "workout_type": "אימון ביתי",
+        "training_type": "כוח",
+        "target_muscle": "בטן",
+        "duration_minutes": 2,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "כוח",
+        "context": "microwave",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "plank", "sets": 2, "reps": 30, "rest_sec": 15},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
+    # === ZOOM / OFFICE (4-8 min, seated/standing) ===
+    {
+        "id": "zoom-neck-shoulders",
+        "name": "5 דק׳ צוואר + כתפיים",
+        "emoji": "💻",
+        "workout_type": "אחר",
+        "training_type": "סיבולת",
+        "target_muscle": "כתפיים",
+        "duration_minutes": 5,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "גמישות",
+        "context": "zoom",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "neck_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "shoulder_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "arm_circles", "sets": 2, "reps": 10, "rest_sec": 0},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
+    {
+        "id": "zoom-core-chair",
+        "name": "5 דק׳ בטן על כיסא",
+        "emoji": "💻",
+        "workout_type": "אחר",
+        "training_type": "כוח",
+        "target_muscle": "בטן",
+        "duration_minutes": 5,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "כוח",
+        "context": "zoom",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "crunch", "sets": 2, "reps": 15, "rest_sec": 15},
+            {"exercise_id": "russian_twist", "sets": 2, "reps": 15, "rest_sec": 15},
+            {"exercise_id": "plank", "sets": 1, "reps": 30, "rest_sec": 0},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
+    {
+        "id": "zoom-full-stretch",
+        "name": "8 דק׳ מתיחות משרדיות",
+        "emoji": "💻",
+        "workout_type": "אחר",
+        "training_type": "סיבולת",
+        "target_muscle": "גוף מלא",
+        "duration_minutes": 8,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "גמישות",
+        "context": "zoom",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "neck_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "shoulder_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "chest_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "hip_flexor_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
+            {"exercise_id": "cat_cow", "sets": 2, "reps": 10, "rest_sec": 0},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
+    # === KID WORKOUTS ===
+    {
+        "id": "kid-toss-cardio",
+        "name": "15 דק׳ קרדיו עם ילדים",
+        "emoji": "👶",
+        "workout_type": "אימון ביתי",
+        "training_type": "סיבולת",
+        "target_muscle": "גוף מלא",
+        "duration_minutes": 15,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "סיבולת",
+        "context": "kid",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "jumping_jacks", "sets": 3, "reps": 15, "rest_sec": 20},
+            {"exercise_id": "squat_bodyweight", "sets": 3, "reps": 10, "rest_sec": 20},
+            {"exercise_id": "high_knees", "sets": 3, "reps": 15, "rest_sec": 20},
+            {"exercise_id": "bear_crawl", "sets": 2, "reps": 5, "rest_sec": 20},
+        ],
+        "warmup": [],
+        "cooldown": ["quad_stretch"],
+    },
+    {
+        "id": "kid-strength-fun",
+        "name": "10 דק׳ כוח משפחתי",
+        "emoji": "👶",
+        "workout_type": "אימון ביתי",
+        "training_type": "כוח",
+        "target_muscle": "גוף מלא",
+        "duration_minutes": 10,
+        "equipment": ["Bodyweight"],
+        "location": "בבית",
+        "category": "כוח",
+        "context": "kid",
+        "gear": "none",
+        "exercises": [
+            {"exercise_id": "pushup_standard", "sets": 2, "reps": 8, "rest_sec": 20},
+            {"exercise_id": "squat_bodyweight", "sets": 2, "reps": 10, "rest_sec": 20},
+            {"exercise_id": "plank", "sets": 2, "reps": 15, "rest_sec": 20},
+        ],
+        "warmup": [],
+        "cooldown": [],
+    },
     # === כוח ביתי ===
     {
         "id": "home-strength-20",
@@ -17,6 +224,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "pushup_standard", "sets": 3, "reps": 10, "rest_sec": 45},
             {"exercise_id": "squat_bodyweight", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -37,6 +246,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "pushup_standard", "sets": 3, "reps": 12, "rest_sec": 45},
             {"exercise_id": "squat_bodyweight", "sets": 3, "reps": 15, "rest_sec": 45},
@@ -59,6 +270,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight", "משקולות"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "basic",
         "exercises": [
             {"exercise_id": "pushup_standard", "sets": 3, "reps": 15, "rest_sec": 60},
             {"exercise_id": "squat_dumbbell", "sets": 3, "reps": 12, "rest_sec": 60},
@@ -83,6 +296,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "pushup_standard", "sets": 3, "reps": 12, "rest_sec": 45},
             {"exercise_id": "pushup_wide", "sets": 3, "reps": 10, "rest_sec": 45},
@@ -104,6 +319,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "squat_bodyweight", "sets": 3, "reps": 15, "rest_sec": 45},
             {"exercise_id": "lunges", "sets": 3, "reps": 10, "rest_sec": 45},
@@ -125,6 +342,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "crunch", "sets": 3, "reps": 15, "rest_sec": 30},
             {"exercise_id": "bicycle_crunch", "sets": 3, "reps": 20, "rest_sec": 30},
@@ -147,6 +366,8 @@ TEMPLATES = [
         "equipment": ["ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "running", "sets": 1, "reps": 20, "rest_sec": 0},
         ],
@@ -164,6 +385,8 @@ TEMPLATES = [
         "equipment": ["ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "running", "sets": 1, "reps": 30, "rest_sec": 0},
         ],
@@ -181,6 +404,8 @@ TEMPLATES = [
         "equipment": ["ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "running", "sets": 1, "reps": 45, "rest_sec": 0},
         ],
@@ -198,6 +423,8 @@ TEMPLATES = [
         "equipment": ["ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "sprint_intervals", "sets": 8, "reps": 1, "rest_sec": 60},
         ],
@@ -215,6 +442,8 @@ TEMPLATES = [
         "equipment": ["ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "walking_fast", "sets": 1, "reps": 30, "rest_sec": 0},
         ],
@@ -233,6 +462,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "bench_press_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
             {"exercise_id": "lat_pulldown", "sets": 3, "reps": 10, "rest_sec": 60},
@@ -256,6 +487,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "bench_press_barbell", "sets": 4, "reps": 8, "rest_sec": 90},
             {"exercise_id": "lat_pulldown", "sets": 4, "reps": 10, "rest_sec": 60},
@@ -281,6 +514,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "bench_press_barbell", "sets": 4, "reps": 8, "rest_sec": 90},
             {"exercise_id": "bench_press_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
@@ -303,6 +538,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "lat_pulldown", "sets": 4, "reps": 10, "rest_sec": 60},
             {"exercise_id": "seated_row_machine", "sets": 3, "reps": 12, "rest_sec": 60},
@@ -325,6 +562,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "shoulder_press_dumbbell", "sets": 4, "reps": 10, "rest_sec": 60},
             {"exercise_id": "lateral_raise_dumbbell", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -346,6 +585,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "squat_barbell", "sets": 4, "reps": 8, "rest_sec": 90},
             {"exercise_id": "leg_press", "sets": 3, "reps": 12, "rest_sec": 60},
@@ -368,6 +609,8 @@ TEMPLATES = [
         "equipment": ["מכשירים"],
         "location": "חדר כושר",
         "category": "סיבולת",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "treadmill", "sets": 1, "reps": 10, "rest_sec": 0},
             {"exercise_id": "elliptical", "sets": 1, "reps": 10, "rest_sec": 0},
@@ -388,6 +631,8 @@ TEMPLATES = [
         "equipment": ["משקולות"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "basic",
         "exercises": [
             {"exercise_id": "bicep_curl_dumbbell", "sets": 3, "reps": 12, "rest_sec": 45},
             {"exercise_id": "tricep_extension_dumbbell", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -408,6 +653,8 @@ TEMPLATES = [
         "equipment": ["משקולות"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "basic",
         "exercises": [
             {"exercise_id": "bench_press_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
             {"exercise_id": "row_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
@@ -430,6 +677,8 @@ TEMPLATES = [
         "equipment": ["משקולות"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "basic",
         "exercises": [
             {"exercise_id": "bicep_curl_dumbbell", "sets": 3, "reps": 12, "rest_sec": 45},
             {"exercise_id": "hammer_curl", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -453,6 +702,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight", "ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "football_drills", "sets": 1, "reps": 30, "rest_sec": 0},
         ],
@@ -470,6 +721,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight", "ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "football_drills", "sets": 1, "reps": 15, "rest_sec": 0},
             {"exercise_id": "football_game", "sets": 1, "reps": 30, "rest_sec": 0},
@@ -488,6 +741,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight", "ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "football_game", "sets": 1, "reps": 60, "rest_sec": 0},
         ],
@@ -506,6 +761,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "גמישות",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "yoga_sun_salutation", "sets": 3, "reps": 1, "rest_sec": 0},
             {"exercise_id": "yoga_warrior", "sets": 2, "reps": 1, "rest_sec": 0},
@@ -527,6 +784,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "גמישות",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "yoga_sun_salutation", "sets": 5, "reps": 1, "rest_sec": 0},
             {"exercise_id": "yoga_warrior", "sets": 3, "reps": 1, "rest_sec": 0},
@@ -549,6 +808,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "גמישות",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "neck_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
             {"exercise_id": "shoulder_stretch", "sets": 2, "reps": 1, "rest_sec": 0},
@@ -572,6 +833,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "סיבולת",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "burpees", "sets": 3, "reps": 8, "rest_sec": 30},
             {"exercise_id": "jump_squat", "sets": 3, "reps": 10, "rest_sec": 30},
@@ -593,6 +856,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "סיבולת",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "burpees", "sets": 4, "reps": 10, "rest_sec": 30},
             {"exercise_id": "jump_squat", "sets": 4, "reps": 12, "rest_sec": 30},
@@ -616,6 +881,8 @@ TEMPLATES = [
         "equipment": [],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "swimming", "sets": 1, "reps": 30, "rest_sec": 0},
         ],
@@ -633,6 +900,8 @@ TEMPLATES = [
         "equipment": [],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "cycling", "sets": 1, "reps": 30, "rest_sec": 0},
         ],
@@ -651,6 +920,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "pushup_standard", "sets": 3, "reps": 15, "rest_sec": 45},
             {"exercise_id": "pushup_wide", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -672,6 +943,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "superman", "sets": 3, "reps": 12, "rest_sec": 45},
             {"exercise_id": "inverted_row", "sets": 3, "reps": 10, "rest_sec": 60},
@@ -692,6 +965,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "squat_bands", "sets": 3, "reps": 15, "rest_sec": 45},
             {"exercise_id": "chest_fly_bands", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -714,6 +989,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "bicep_curl_barbell", "sets": 4, "reps": 10, "rest_sec": 60},
             {"exercise_id": "hammer_curl", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -736,6 +1013,8 @@ TEMPLATES = [
         "equipment": ["מכשירים"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "crunch", "sets": 3, "reps": 20, "rest_sec": 30},
             {"exercise_id": "bicycle_crunch", "sets": 3, "reps": 20, "rest_sec": 30},
@@ -758,6 +1037,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בחוץ",
         "category": "כוח",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "pushup_standard", "sets": 3, "reps": 15, "rest_sec": 45},
             {"exercise_id": "squat_bodyweight", "sets": 3, "reps": 15, "rest_sec": 45},
@@ -780,6 +1061,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "burpees", "sets": 4, "reps": 8, "rest_sec": 30},
             {"exercise_id": "sprint_intervals", "sets": 4, "reps": 1, "rest_sec": 60},
@@ -801,6 +1084,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "גמישות",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "yoga_sun_salutation", "sets": 3, "reps": 1, "rest_sec": 0},
             {"exercise_id": "cat_cow", "sets": 2, "reps": 10, "rest_sec": 0},
@@ -821,6 +1106,8 @@ TEMPLATES = [
         "equipment": ["משקולות"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "basic",
         "exercises": [
             {"exercise_id": "shoulder_press_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
             {"exercise_id": "lateral_raise_dumbbell", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -842,6 +1129,8 @@ TEMPLATES = [
         "equipment": ["משקולות"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "basic",
         "exercises": [
             {"exercise_id": "bench_press_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
             {"exercise_id": "row_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
@@ -863,6 +1152,8 @@ TEMPLATES = [
         "equipment": ["משקולות"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "basic",
         "exercises": [
             {"exercise_id": "goblet_squat", "sets": 3, "reps": 12, "rest_sec": 60},
             {"exercise_id": "lunges_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
@@ -884,6 +1175,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "כוח",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "glute_bridge", "sets": 3, "reps": 15, "rest_sec": 30},
             {"exercise_id": "sumo_squat", "sets": 3, "reps": 12, "rest_sec": 45},
@@ -905,6 +1198,8 @@ TEMPLATES = [
         "equipment": ["Bodyweight"],
         "location": "בבית",
         "category": "סיבולת",
+        "context": "home",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "jumping_jacks", "sets": 3, "reps": 15, "rest_sec": 30},
             {"exercise_id": "squat_bodyweight", "sets": 3, "reps": 10, "rest_sec": 30},
@@ -926,6 +1221,8 @@ TEMPLATES = [
         "equipment": ["ריצה"],
         "location": "בחוץ",
         "category": "סיבולת",
+        "context": "outdoor",
+        "gear": "none",
         "exercises": [
             {"exercise_id": "walking_fast", "sets": 1, "reps": 45, "rest_sec": 0},
         ],
@@ -943,6 +1240,8 @@ TEMPLATES = [
         "equipment": ["מכשירים", "משקולות"],
         "location": "חדר כושר",
         "category": "כוח",
+        "context": "gym",
+        "gear": "full",
         "exercises": [
             {"exercise_id": "bench_press_dumbbell", "sets": 3, "reps": 10, "rest_sec": 60},
             {"exercise_id": "lat_pulldown", "sets": 3, "reps": 10, "rest_sec": 60},
@@ -971,3 +1270,34 @@ def get_templates_by_category(category: str):
 
 def get_template_categories():
     return list({t["category"] for t in TEMPLATES})
+
+
+def match_templates(context=None, gear=None, muscle=None):
+    """Match templates by context, gear, and muscle group.
+    Returns filtered list sorted by best match."""
+    results = TEMPLATES
+
+    if context:
+        results = [t for t in results if t.get("context") == context]
+
+    if gear:
+        # "none" matches all; "basic" matches none+basic; "full" matches all
+        if gear == "none":
+            results = [t for t in results if t.get("gear") in ("none",)]
+        elif gear == "basic":
+            results = [t for t in results if t.get("gear") in ("none", "basic")]
+        # "full" matches everything
+
+    if muscle:
+        if muscle == "גוף מלא":
+            results = [t for t in results if t.get("target_muscle") in ("גוף מלא", None)]
+        elif muscle == "הפתעה":
+            # Random - return all and let caller pick
+            pass
+        else:
+            # Match specific muscle OR full body
+            results = [t for t in results
+                       if t.get("target_muscle") == muscle
+                       or t.get("target_muscle") == "גוף מלא"]
+
+    return results

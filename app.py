@@ -1,39 +1,30 @@
 """
-FitnessMate - Main Streamlit Application
-Fitness tracking app with modern dark UI, Garmin integration, smart coach.
+FitnessMate - Tinder-Gym Workout Matcher
+State Machine: Context → Gear → Muscle Map → Workout Player → Summary
+Zero forms. Visual selection. Instant workout.
 """
 
+import random
 import streamlit as st
 import streamlit.components.v1 as components
-from datetime import date, timedelta
-import plotly.graph_objects as go
+from datetime import date
 
-from config import (
-    WORKOUT_TYPES, FEELINGS, EQUIPMENT, MUSCLES,
-    LOCATIONS, COMPANY, ENERGY_LEVELS,
-)
+from config import MUSCLES
 from database import (
-    is_demo_mode, get_current_user_id, get_profile,
-    save_workout, get_today_workouts, get_week_workouts,
-    get_month_workouts, save_message, get_recent_messages,
-    sign_in, sign_up,
+    is_demo_mode, save_workout, get_week_workouts,
+    sign_in, sign_up, get_current_user_id,
 )
-from templates_data import TEMPLATES, get_template_by_id
+from templates_data import (
+    TEMPLATES, CONTEXTS, GEARS, match_templates, get_template_by_id,
+)
 from exercises_data import (
     get_exercises_for_template, get_warmup_exercises,
     get_cooldown_exercises, get_exercise_image_url,
+    get_exercise_gif_url, get_exercise_tips,
 )
-from coach import (
-    get_greeting, get_workout_suggestion, get_post_workout_message,
-    get_streak_message, get_no_workout_message, get_weekly_insight,
-    get_ai_suggestion, get_template_suggestion, get_persuasion_message,
-    get_proactive_message,
-)
-from muscles import (
-    get_muscle_svg, get_muscle_card_html, get_workout_muscle_badge,
-    get_template_muscle_svg,
-)
-from garmin import get_garmin_data, render_garmin_widget_html, get_garmin_insight
+from coach import get_ghost_coach_message, get_weekly_insight
+from muscles import get_muscle_svg, get_muscle_card_html
+from garmin import get_garmin_data, render_garmin_widget_html, get_energy_suggestion
 
 # ------------------------------------
 # Page Config
@@ -81,110 +72,24 @@ def render_svg_html(html, height=200):
 
 
 # ------------------------------------
-# Exercise Cards HTML Builder
-# ------------------------------------
-def _build_exercise_cards_html(template):
-    """Build inline exercise cards HTML for a template. NOT a dropdown."""
-    exercises = get_exercises_for_template(template)
-    warmup = get_warmup_exercises(template)
-    cooldown = get_cooldown_exercises(template)
-
-    html_parts = []
-
-    # Warmup section
-    if warmup:
-        html_parts.append(
-            '<div class="exercise-section-label warmup">🔥 חימום</div>'
-        )
-        for ex in warmup:
-            img_url = get_exercise_image_url(ex)
-            img_tag = (
-                f'<img class="exercise-card-img" src="{img_url}" '
-                f'alt="{ex["name"]}" onerror="this.style.display=\'none\'" />'
-                if img_url else ''
-            )
-            html_parts.append(
-                f'<div class="exercise-card">'
-                f'{img_tag}'
-                f'<div class="exercise-card-info">'
-                f'<div class="exercise-card-name">{ex["name"]}</div>'
-                f'<div class="exercise-card-detail">{ex.get("name_en", "")}</div>'
-                f'</div>'
-                f'<div class="exercise-card-badge">חימום</div>'
-                f'</div>'
-            )
-
-    # Main exercises
-    if exercises:
-        html_parts.append(
-            '<div class="exercise-section-label">💪 תרגילים עיקריים</div>'
-        )
-        for i, ex in enumerate(exercises, 1):
-            img_url = get_exercise_image_url(ex)
-            img_tag = (
-                f'<img class="exercise-card-img" src="{img_url}" '
-                f'alt="{ex["name"]}" onerror="this.style.display=\'none\'" />'
-                if img_url else ''
-            )
-            rest_txt = f' · מנוחה {ex["rest_sec"]}ש׳' if ex.get("rest_sec", 0) > 0 else ""
-            html_parts.append(
-                f'<div class="exercise-card">'
-                f'<div class="exercise-card-num">{i}</div>'
-                f'{img_tag}'
-                f'<div class="exercise-card-info">'
-                f'<div class="exercise-card-name">{ex["name"]}</div>'
-                f'<div class="exercise-card-detail">'
-                f'{ex["sets"]}×{ex["reps"]}{rest_txt}'
-                f'</div>'
-                f'</div>'
-                f'</div>'
-            )
-
-    # Cooldown section
-    if cooldown:
-        html_parts.append(
-            '<div class="exercise-section-label cooldown">🧊 שחרור</div>'
-        )
-        for ex in cooldown:
-            img_url = get_exercise_image_url(ex)
-            img_tag = (
-                f'<img class="exercise-card-img" src="{img_url}" '
-                f'alt="{ex["name"]}" onerror="this.style.display=\'none\'" />'
-                if img_url else ''
-            )
-            html_parts.append(
-                f'<div class="exercise-card">'
-                f'{img_tag}'
-                f'<div class="exercise-card-info">'
-                f'<div class="exercise-card-name">{ex["name"]}</div>'
-                f'<div class="exercise-card-detail">{ex.get("name_en", "")}</div>'
-                f'</div>'
-                f'<div class="exercise-card-badge" style="background:rgba(68,138,255,0.15);color:#448AFF;">שחרור</div>'
-                f'</div>'
-            )
-
-    if not html_parts:
-        return ""
-
-    return '<div class="exercise-list">' + "\n".join(html_parts) + '</div>'
-
-
-# ------------------------------------
 # Session State Init
 # ------------------------------------
 def init_state():
     defaults = {
-        "page": "dashboard",
-        "coach_step": "greeting",
-        "coach_energy": None,
-        "coach_messages": [],
-        "selected_template": None,
-        "workout_saved": False,
-        "user_id": None,
+        # Auth
         "authenticated": False,
-        "selected_muscle": None,
+        "user_id": None,
+        # State machine: context → gear → muscle → player → summary
+        "tg_state": "context",
+        "tg_context": None,
+        "tg_gear": None,
+        "tg_muscle": None,
+        "tg_template": None,
+        "tg_exercise_idx": 0,
+        "tg_exercises": [],
+        "tg_workout_done": False,
+        # Garmin
         "garmin_data": None,
-        "coach_persuade_count": 0,
     }
     for key, val in defaults.items():
         if key not in st.session_state:
@@ -201,14 +106,14 @@ def render_auth():
     st.markdown(
         '<div class="app-header">'
         '<h1>💪 FitnessMate</h1>'
-        '<p class="subtitle">ניהול כושר חכם ופשוט</p>'
+        '<p class="subtitle">Workout Matcher for Couch Potatoes</p>'
         "</div>",
         unsafe_allow_html=True,
     )
 
     if is_demo_mode():
         st.info("מצב דמו - הנתונים נשמרים בזיכרון בלבד")
-        if st.button("התחל במצב דמו", use_container_width=True, type="primary"):
+        if st.button("התחל!", use_container_width=True, type="primary"):
             st.session_state.authenticated = True
             st.session_state.user_id = "demo-user"
             st.rerun()
@@ -243,654 +148,536 @@ def render_auth():
 
 
 # ------------------------------------
-# Navigation
+# Helper: Go back one state
 # ------------------------------------
-def render_nav():
-    cols = st.columns(4)
-    pages = [
-        ("dashboard", "📊", "דשבורד"),
-        ("log", "➕", "אימון"),
-        ("coach", "🤖", "קואצ׳"),
-        ("templates", "📋", "תבניות"),
-    ]
-    for col, (page_id, icon, label) in zip(cols, pages):
-        with col:
-            btn_type = "primary" if st.session_state.page == page_id else "secondary"
-            if st.button(f"{icon} {label}", key=f"nav_{page_id}",
-                         use_container_width=True, type=btn_type):
-                st.session_state.page = page_id
-                st.rerun()
+def _go_back():
+    """Navigate back one step in the state machine."""
+    state = st.session_state.tg_state
+    if state == "gear":
+        st.session_state.tg_state = "context"
+        st.session_state.tg_context = None
+    elif state == "muscle":
+        st.session_state.tg_state = "gear"
+        st.session_state.tg_gear = None
+    elif state == "player":
+        st.session_state.tg_state = "muscle"
+        st.session_state.tg_muscle = None
+        st.session_state.tg_template = None
+        st.session_state.tg_exercises = []
+        st.session_state.tg_exercise_idx = 0
+    elif state == "summary":
+        _reset_flow()
+
+
+def _reset_flow():
+    """Reset state machine to beginning."""
+    st.session_state.tg_state = "context"
+    st.session_state.tg_context = None
+    st.session_state.tg_gear = None
+    st.session_state.tg_muscle = None
+    st.session_state.tg_template = None
+    st.session_state.tg_exercises = []
+    st.session_state.tg_exercise_idx = 0
+    st.session_state.tg_workout_done = False
 
 
 # ------------------------------------
-# Dashboard
+# STATE 1: Context Selection
 # ------------------------------------
-def render_dashboard():
-    user_id = st.session_state.user_id
-    today_workouts = get_today_workouts(user_id)
-    week_workouts = get_week_workouts(user_id)
+def render_context_selection():
+    st.markdown(
+        '<div class="app-header">'
+        '<h1>💪 FitnessMate</h1>'
+        '<p class="subtitle">מה המצב?</p>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    st.markdown('<h2 class="section-title">📊 הדשבורד שלך</h2>',
-                unsafe_allow_html=True)
-
-    # --- Garmin Widget ---
+    # Garmin widget (small, at top)
     garmin_data = get_garmin_data()
     st.session_state.garmin_data = garmin_data
     garmin_html = render_garmin_widget_html(garmin_data)
     st.markdown(garmin_html, unsafe_allow_html=True)
 
-    # --- Proactive Coach Popup ---
-    proactive_msg = get_proactive_message(week_workouts, garmin_data)
-    if proactive_msg and not today_workouts:
+    # Determine if energy is low (for Garmin pulse glow)
+    energy = get_energy_suggestion(garmin_data)
+    low_energy = energy == "low"
+
+    # Context cards - 2 columns grid using Streamlit buttons
+    contexts = [
+        ("microwave", "🍿", "Microwave Hero", "2 דקות בזמן המיקרו"),
+        ("zoom", "💻", "Zoom-Proof Core", "בזמן ישיבה/עבודה"),
+        ("kid", "👶", "Kid-Toss Cardio", "עם ילדים"),
+        ("home", "🏠", "Home Workout", "אימון ביתי"),
+        ("gym", "🏋️", "Gym Time", "חדר כושר"),
+        ("outdoor", "🌳", "Outdoor", "בחוץ"),
+    ]
+
+    # Easy contexts that get glow when battery is low
+    easy_contexts = {"microwave", "zoom"}
+
+    for row_start in range(0, len(contexts), 2):
+        cols = st.columns(2)
+        for j, col in enumerate(cols):
+            idx = row_start + j
+            if idx >= len(contexts):
+                break
+            ctx_id, emoji, title, desc = contexts[idx]
+            with col:
+                # Show glow class hint for easy workouts when low energy
+                glow_hint = " ✨" if low_energy and ctx_id in easy_contexts else ""
+                if st.button(
+                    f"{emoji}\n{title}{glow_hint}\n{desc}",
+                    key=f"ctx_{ctx_id}",
+                    use_container_width=True,
+                ):
+                    st.session_state.tg_context = ctx_id
+                    st.session_state.tg_state = "gear"
+                    st.rerun()
+
+    # Weekly insight at bottom
+    week_workouts = get_week_workouts(st.session_state.user_id)
+    if week_workouts:
+        insight = get_weekly_insight(week_workouts)
         st.markdown(
-            f'<div class="coach-popup">'
-            f'<div class="coach-popup-text">🤖 {proactive_msg}</div>'
-            f'</div>',
+            f'<div class="glass-card" style="text-align:center;margin-top:1rem;">'
+            f'{insight}</div>',
             unsafe_allow_html=True,
         )
 
-    # --- Today's Card with Muscle Image ---
-    if today_workouts:
-        w = today_workouts[0]
-        muscle_badge = get_workout_muscle_badge(w, size=70)
-        render_svg_html(
-            f'<div class="today-card done">'
-            f'<div class="today-card-inner">'
-            f'<div class="today-card-body">'
-            f'{muscle_badge}'
-            f'</div>'
-            f'<div class="today-card-info">'
-            f'<div class="today-status">✅ התאמנת היום!</div>'
-            f'<div class="today-details">'
-            f'<span class="tag">{w.get("workout_type", "")}</span>'
-            f'<span class="tag">קושי {w.get("difficulty", "")}/10</span>'
-            f'<span class="tag">{w.get("feeling", "")}</span>'
-            f'</div></div></div></div>',
-            height=150,
-        )
-    else:
-        st.markdown(
-            '<div class="today-card pending">'
-            '<div class="today-status">⏳ עדיין לא התאמנת היום</div>'
-            '<div class="today-action">לחץ על ➕ להתחיל!</div>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
 
-    # --- Weekly View ---
-    st.markdown('<h3 class="section-subtitle">השבוע בקצרה</h3>',
-                unsafe_allow_html=True)
+# ------------------------------------
+# STATE 2: Gear Selection
+# ------------------------------------
+def render_gear_selection():
+    # Back button
+    if st.button("← חזרה", key="back_gear"):
+        _go_back()
+        st.rerun()
 
-    workout_by_date = {}
-    for w in week_workouts:
-        d = w.get("workout_date", "")
-        if d not in workout_by_date:
-            workout_by_date[d] = w
-
-    week_cols = st.columns(7)
-    day_names = ["ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳", "א׳"]
-
-    for i in range(7):
-        day = date.today() - timedelta(days=6 - i)
-        day_str = day.isoformat()
-        day_name = day_names[day.weekday()]
-        w = workout_by_date.get(day_str)
-
-        with week_cols[i]:
-            if w:
-                mini_svg = get_muscle_svg(
-                    w.get("target_muscle"),
-                    w.get("training_type", "כוח"),
-                    size=32,
-                )
-                render_svg_html(
-                    f'<div class="week-day done">'
-                    f'<div class="day-name">{day_name}</div>'
-                    f'<div class="day-body">{mini_svg}</div>'
-                    f'</div>',
-                    height=80,
-                )
-            else:
-                st.markdown(
-                    f'<div class="week-day empty">'
-                    f'<div class="day-name">{day_name}</div>'
-                    f'<div class="day-icon">⬜</div></div>',
-                    unsafe_allow_html=True,
-                )
-
-    # --- Weekly Insight ---
-    insight = get_weekly_insight(week_workouts)
+    ctx = st.session_state.tg_context
+    ctx_info = CONTEXTS.get(ctx, {})
     st.markdown(
-        f'<div class="insight-card">{insight}</div>',
+        f'<h2 class="section-title">{ctx_info.get("label", "")} - מה יש לך?</h2>',
         unsafe_allow_html=True,
     )
 
-    # --- AI Suggestion ---
-    energy = st.session_state.get("coach_energy", "medium") or "medium"
-    suggestion, template_id = get_ai_suggestion(week_workouts, energy, garmin_data)
-    template = get_template_by_id(template_id)
+    gears = [
+        ("none", "✋", "Just Me", "בלי ציוד"),
+        ("basic", "🎒", "Basic Gear", "משקולות קטנות / גומיות"),
+        ("full", "🏋️", "Full Gym", "מכשירים מלאים"),
+    ]
 
-    st.markdown('<h3 class="section-subtitle">💡 הצעה עבורך</h3>',
-                unsafe_allow_html=True)
+    # For microwave/zoom - skip gear (always "none") and go directly to muscle
+    if ctx in ("microwave", "zoom"):
+        st.session_state.tg_gear = "none"
+        st.session_state.tg_state = "muscle"
+        st.rerun()
+        return
 
-    if template:
-        tmpl_svg = get_template_muscle_svg(template, size=60)
-        render_svg_html(
-            f'<div class="suggestion-card">'
-            f'<div class="suggestion-inner">'
-            f'<div class="suggestion-body">{tmpl_svg}</div>'
-            f'<div class="suggestion-text">{suggestion}</div>'
-            f'</div></div>',
-            height=130,
-        )
+    for gear_id, emoji, title, desc in gears:
         if st.button(
-            f'{template["emoji"]} {template["name"]}',
-            key="dash_suggestion_btn",
+            f"{emoji}  {title} - {desc}",
+            key=f"gear_{gear_id}",
             use_container_width=True,
         ):
-            st.session_state.selected_template = template
-            st.session_state.page = "log"
+            st.session_state.tg_gear = gear_id
+            st.session_state.tg_state = "muscle"
             st.rerun()
-    else:
-        st.markdown(
-            f'<div class="suggestion-card">{suggestion}</div>',
-            unsafe_allow_html=True,
-        )
-
-    # --- Garmin Insight ---
-    garmin_insight = get_garmin_insight(garmin_data)
-    if garmin_insight:
-        st.markdown(
-            f'<div class="glass-card" style="text-align:center;font-size:0.85rem;">'
-            f'⌚ {garmin_insight}</div>',
-            unsafe_allow_html=True,
-        )
-
-    # --- Progress Chart ---
-    month_workouts = get_month_workouts(user_id)
-    if month_workouts:
-        st.markdown('<h3 class="section-subtitle">📈 התקדמות (30 ימים)</h3>',
-                    unsafe_allow_html=True)
-        render_progress_chart(month_workouts)
 
 
-def render_progress_chart(workouts):
-    """Line chart of workouts per day over the last 30 days."""
-    from collections import Counter
+# ------------------------------------
+# STATE 3: Muscle Map Selection
+# ------------------------------------
+def render_muscle_map():
+    # Back button
+    if st.button("← חזרה", key="back_muscle"):
+        _go_back()
+        st.rerun()
 
-    dates_counter = Counter(w.get("workout_date", "") for w in workouts)
-
-    chart_dates = []
-    chart_counts = []
-    for i in range(30):
-        d = (date.today() - timedelta(days=29 - i)).isoformat()
-        chart_dates.append(d)
-        chart_counts.append(dates_counter.get(d, 0))
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=chart_dates,
-        y=chart_counts,
-        mode="lines+markers",
-        line=dict(color="#00E676", width=3),
-        marker=dict(size=8, color="#00E676"),
-        fill="tozeroy",
-        fillcolor="rgba(0, 230, 118, 0.08)",
-    ))
-    fig.update_layout(
-        height=250,
-        margin=dict(l=10, r=10, t=10, b=30),
-        xaxis=dict(showgrid=False, tickformat="%d/%m", color="#8B949E"),
-        yaxis=dict(showgrid=True, dtick=1, title="", color="#8B949E",
-                   gridcolor="rgba(48,54,61,0.5)"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#8B949E"),
+    st.markdown(
+        '<h2 class="section-title">מה מאמנים?</h2>',
+        unsafe_allow_html=True,
     )
-    st.plotly_chart(fig, use_container_width=True)
 
+    # Full body SVG preview
+    svg_full = get_muscle_svg("גוף מלא", "כוח", size=120)
+    render_svg_html(
+        f'<div style="text-align:center">{svg_full}</div>',
+        height=200,
+    )
 
-# ------------------------------------
-# Visual Muscle Picker
-# ------------------------------------
-def render_muscle_picker(default_muscle=None):
-    """Touch-friendly visual muscle group picker. Returns selected muscle."""
-    current = st.session_state.get("selected_muscle", default_muscle)
+    # Quick action buttons
+    quick_cols = st.columns(2)
+    with quick_cols[0]:
+        if st.button("🎯 גוף מלא", key="muscle_full",
+                      use_container_width=True, type="primary"):
+            _start_workout("גוף מלא")
+            st.rerun()
+    with quick_cols[1]:
+        if st.button("🎲 הפתעה!", key="muscle_surprise",
+                      use_container_width=True):
+            _start_workout("הפתעה")
+            st.rerun()
 
-    if current:
-        svg_big = get_muscle_svg(current, "כוח", size=100)
-        render_svg_html(
-            f'<div class="muscle-preview">'
-            f'{svg_big}'
-            f'<div class="muscle-preview-label">{current}</div>'
-            f'</div>',
-            height=200,
-        )
+    st.markdown("---")
 
-    row1 = MUSCLES[:4]
-    row2 = MUSCLES[4:]
+    # Individual muscle buttons with SVG
+    muscles_list = ["חזה", "גב", "כתפיים", "זרועות", "בטן", "רגליים"]
 
-    cols1 = st.columns(4)
+    # Row of 3 + Row of 3
+    row1 = muscles_list[:3]
+    row2 = muscles_list[3:]
+
+    cols1 = st.columns(3)
     for idx, muscle in enumerate(row1):
         with cols1[idx]:
-            is_sel = muscle == current
-            card_html = get_muscle_card_html(muscle, is_selected=is_sel, size=55)
-            render_svg_html(card_html, height=140)
+            card_html = get_muscle_card_html(muscle, is_selected=False, size=55)
+            render_svg_html(card_html, height=120)
             if st.button(
-                muscle, key=f"muscle_pick_{muscle}",
+                muscle, key=f"muscle_{muscle}",
                 use_container_width=True,
-                type="primary" if is_sel else "secondary",
             ):
-                st.session_state.selected_muscle = muscle
+                _start_workout(muscle)
                 st.rerun()
 
     cols2 = st.columns(3)
     for idx, muscle in enumerate(row2):
         with cols2[idx]:
-            is_sel = muscle == current
-            card_html = get_muscle_card_html(muscle, is_selected=is_sel, size=55)
-            render_svg_html(card_html, height=140)
+            card_html = get_muscle_card_html(muscle, is_selected=False, size=55)
+            render_svg_html(card_html, height=120)
             if st.button(
-                muscle, key=f"muscle_pick_{muscle}",
+                muscle, key=f"muscle_{muscle}",
                 use_container_width=True,
-                type="primary" if is_sel else "secondary",
             ):
-                st.session_state.selected_muscle = muscle
+                _start_workout(muscle)
                 st.rerun()
 
-    return st.session_state.get("selected_muscle", default_muscle)
 
+def _start_workout(muscle):
+    """Match a workout template and start the player."""
+    context = st.session_state.tg_context
+    gear = st.session_state.tg_gear
 
-# ------------------------------------
-# Log Workout
-# ------------------------------------
-def render_log_workout():
-    st.markdown('<h2 class="section-title">➕ רשום אימון</h2>',
-                unsafe_allow_html=True)
+    # Handle "surprise" - pick random muscle
+    if muscle == "הפתעה":
+        muscle = random.choice(["חזה", "גב", "כתפיים", "זרועות", "בטן", "רגליים", "גוף מלא"])
 
-    template = st.session_state.get("selected_template")
+    st.session_state.tg_muscle = muscle
 
-    # Pre-fill from template if selected
-    default_type = WORKOUT_TYPES.index(template["workout_type"]) if template and template["workout_type"] in WORKOUT_TYPES else 0
-    default_duration = template["duration_minutes"] if template else 30
-    default_training = 0 if (template and template["training_type"] == "כוח") else 1 if template else 0
-    default_location = LOCATIONS.index(template["location"]) if template and template["location"] in LOCATIONS else 0
-    default_equipment = template["equipment"] if template else []
+    # Match templates
+    templates = match_templates(context=context, gear=gear, muscle=muscle)
 
-    if template:
-        # Show template badge with muscle illustration
-        tmpl_svg = get_template_muscle_svg(template, size=70)
-        render_svg_html(
-            f'<div class="template-badge-with-body">'
-            f'<div class="template-badge-svg">{tmpl_svg}</div>'
-            f'<div class="template-badge-text">'
-            f'{template["emoji"]} {template["name"]}'
-            f'</div></div>',
-            height=130,
-        )
+    if not templates:
+        # Fallback: try without muscle filter
+        templates = match_templates(context=context, gear=gear)
 
-        # Show exercise list as inline cards (NOT dropdown/expander)
-        exercises_html = _build_exercise_cards_html(template)
-        if exercises_html:
-            render_svg_html(exercises_html, height=_calc_exercise_list_height(template))
+    if not templates:
+        # Ultimate fallback: any template for this context
+        templates = match_templates(context=context)
 
-    # --- Workout Type ---
-    workout_type = st.selectbox(
-        "סוג אימון",
-        WORKOUT_TYPES,
-        index=default_type,
-    )
+    if not templates:
+        # Last resort: any bodyweight home template
+        templates = [t for t in TEMPLATES if t.get("gear") == "none"
+                     and t.get("context") == "home"]
 
-    # --- Training Type ---
-    training_type = st.radio(
-        "סוג",
-        ["כוח", "סיבולת"],
-        index=default_training,
-        horizontal=True,
-    )
-
-    # --- Muscle Picker (visual, only for strength) ---
-    target_muscle = None
-    if training_type == "כוח":
-        default_m = None
-        if template and template.get("target_muscle") in MUSCLES:
-            default_m = template["target_muscle"]
-        if st.session_state.get("selected_muscle") is None and default_m:
-            st.session_state.selected_muscle = default_m
-
-        st.markdown('<div class="muscle-picker-label">בחר קבוצת שרירים</div>',
-                    unsafe_allow_html=True)
-        target_muscle = render_muscle_picker(default_m)
+    if templates:
+        template = random.choice(templates)
     else:
-        cardio_svg = get_muscle_svg(None, "סיבולת", size=100)
-        render_svg_html(
-            f'<div class="muscle-preview cardio">'
-            f'{cardio_svg}'
-            f'<div class="muscle-preview-label">קרדיו / סיבולת</div>'
-            f'</div>',
-            height=200,
-        )
-        st.session_state.selected_muscle = None
+        template = TEMPLATES[0]  # Absolute fallback
 
-    # --- Duration ---
-    duration = st.number_input(
-        "משך (דקות)",
-        min_value=5,
-        max_value=180,
-        value=default_duration,
-        step=5,
-    )
+    st.session_state.tg_template = template
 
-    # --- Difficulty Slider ---
-    difficulty = st.slider("קושי", 1, 10, 5)
-
-    # --- Feeling ---
-    feeling = st.selectbox("איך הרגשת?", FEELINGS)
-
-    # --- Equipment ---
-    equipment = st.multiselect("כלים", EQUIPMENT, default=default_equipment)
-
-    # --- Location ---
-    location = st.radio("מקום", LOCATIONS, index=default_location, horizontal=True)
-
-    # --- Company ---
-    company = st.radio("עם מי?", COMPANY, horizontal=True)
-
-    # --- Save Button ---
-    if st.button("שמור אימון 💾", use_container_width=True, type="primary"):
-        workout = {
-            "workout_type": workout_type,
-            "training_type": training_type,
-            "target_muscle": target_muscle,
-            "duration_minutes": duration,
-            "difficulty": difficulty,
-            "feeling": feeling,
-            "equipment": equipment,
-            "location": location,
-            "company": company,
-            "template_id": template["id"] if template else None,
-        }
-
-        save_workout(st.session_state.user_id, workout)
-
-        msg = get_post_workout_message(difficulty, feeling)
-        save_message(st.session_state.user_id, "coach", msg)
-
-        st.session_state.selected_template = None
-        st.session_state.selected_muscle = None
-        st.session_state.workout_saved = True
-        st.rerun()
-
-    if st.session_state.get("workout_saved"):
-        st.success("האימון נשמר! כל הכבוד! 💪")
-        st.session_state.workout_saved = False
-
-    if template:
-        if st.button("נקה תבנית", use_container_width=True):
-            st.session_state.selected_template = None
-            st.session_state.selected_muscle = None
-            st.rerun()
-
-
-def _calc_exercise_list_height(template):
-    """Calculate height for the exercise list iframe."""
+    # Build exercise list
     exercises = get_exercises_for_template(template)
-    warmup = get_warmup_exercises(template)
-    cooldown = get_cooldown_exercises(template)
-    total = len(exercises) + len(warmup) + len(cooldown)
-    # section labels count
-    sections = (1 if warmup else 0) + (1 if exercises else 0) + (1 if cooldown else 0)
-    return total * 65 + sections * 40 + 20
+    st.session_state.tg_exercises = exercises
+    st.session_state.tg_exercise_idx = 0
+    st.session_state.tg_state = "player"
 
 
 # ------------------------------------
-# Templates
+# STATE 4: Workout Player
 # ------------------------------------
-def render_templates():
-    st.markdown('<h2 class="section-title">📋 תבניות מהירות</h2>',
-                unsafe_allow_html=True)
+def render_workout_player():
+    template = st.session_state.tg_template
+    exercises = st.session_state.tg_exercises
+    current_idx = st.session_state.tg_exercise_idx
 
-    # Category filter
-    categories = ["הכל", "כוח", "סיבולת", "גמישות"]
-    selected_cat = st.radio(
-        "קטגוריה",
-        categories,
-        horizontal=True,
-        label_visibility="collapsed",
+    if not template or not exercises:
+        st.error("לא נמצא אימון מתאים")
+        if st.button("חזרה להתחלה", use_container_width=True):
+            _reset_flow()
+            st.rerun()
+        return
+
+    total = len(exercises)
+    current_ex = exercises[current_idx] if current_idx < total else None
+
+    # Progress bar
+    progress_pct = int((current_idx / total) * 100)
+    st.markdown(
+        f'<div class="player-progress-bar">'
+        f'<div class="player-progress-fill" style="width:{progress_pct}%"></div>'
+        f'</div>'
+        f'<div class="player-exercise-counter" style="text-align:center;margin:0.3rem 0;">'
+        f'{current_idx + 1} / {total}'
+        f'</div>',
+        unsafe_allow_html=True,
     )
 
-    filtered = TEMPLATES if selected_cat == "הכל" else [
-        t for t in TEMPLATES if t["category"] == selected_cat
-    ]
+    if current_ex is None:
+        # All exercises done!
+        _finish_workout()
+        st.rerun()
+        return
 
-    # Render templates in grid with muscle illustrations
-    for i in range(0, len(filtered), 2):
-        cols = st.columns(2)
-        for j, col in enumerate(cols):
-            idx = i + j
-            if idx >= len(filtered):
-                break
-            t = filtered[idx]
-            with col:
-                tmpl_svg = get_template_muscle_svg(t, size=50)
-                exercises = get_exercises_for_template(t)
-                ex_count = len(exercises)
-                ex_names = " · ".join(ex["name"] for ex in exercises[:3])
-                if ex_count > 3:
-                    ex_names += f" +{ex_count - 3}"
+    # Template name
+    st.markdown(
+        f'<div style="text-align:center;color:#8B949E;font-size:0.85rem;margin-bottom:0.25rem;">'
+        f'{template["emoji"]} {template["name"]}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
-                render_svg_html(
-                    f'<div class="template-card">'
-                    f'<div class="template-card-body">{tmpl_svg}</div>'
-                    f'<div class="template-name">{t["name"]}</div>'
-                    f'<div class="template-meta">{t["location"]} · {t["training_type"]}</div>'
-                    f'<div class="template-exercises">{ex_names}</div>'
-                    f'</div>',
-                    height=170,
-                )
-                if st.button(
-                    "בחר",
-                    key=f'tmpl_{t["id"]}',
-                    use_container_width=True,
-                ):
-                    st.session_state.selected_template = t
-                    st.session_state.page = "log"
-                    st.rerun()
+    # GIF / Image - the hero element
+    gif_url = get_exercise_gif_url(current_ex)
+    img_url = get_exercise_image_url(current_ex)
+    display_url = gif_url or img_url
 
+    if display_url:
+        # Show the exercise GIF/image large
+        render_svg_html(
+            f'<div class="player-container">'
+            f'<div class="player-gif-wrapper">'
+            f'<img class="player-gif" src="{display_url}" '
+            f'alt="{current_ex["name"]}" '
+            f'onerror="this.parentElement.innerHTML='
+            f'\'<div class=player-gif-placeholder>💪<span>{current_ex["name"]}</span></div>\'" />'
+            f'<div class="player-hud-bottom">'
+            f'<div class="player-exercise-name">{current_ex["name"]}</div>'
+            f'<div class="player-exercise-detail">'
+            f'{current_ex["sets"]}×{current_ex["reps"]}'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>',
+            height=380,
+        )
+    else:
+        # No image - show exercise name large with muscle SVG
+        muscle = current_ex.get("muscle_primary", st.session_state.tg_muscle)
+        svg = get_muscle_svg(muscle, "כוח", size=100)
+        render_svg_html(
+            f'<div class="player-container">'
+            f'<div class="player-gif-wrapper">'
+            f'<div class="player-gif-placeholder">'
+            f'{svg}'
+            f'</div>'
+            f'<div class="player-hud-bottom">'
+            f'<div class="player-exercise-name">{current_ex["name"]}</div>'
+            f'<div class="player-exercise-detail">'
+            f'{current_ex["sets"]}×{current_ex["reps"]}'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>',
+            height=380,
+        )
 
-# ------------------------------------
-# Coach Chat
-# ------------------------------------
-def render_coach():
-    st.markdown('<h2 class="section-title">🤖 הקואצ׳ שלך</h2>',
-                unsafe_allow_html=True)
+    # Sets x Reps display below image
+    rest_text = f" · מנוחה {current_ex.get('rest_sec', 0)}ש׳" if current_ex.get("rest_sec", 0) > 0 else ""
+    st.markdown(
+        f'<div style="text-align:center;font-size:1.2rem;font-weight:700;color:#E6EDF3;margin:0.5rem 0;">'
+        f'{current_ex["sets"]} סטים × {current_ex["reps"]} חזרות{rest_text}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
-    user_id = st.session_state.user_id
+    # DO / DON'T tips
+    tips = get_exercise_tips(current_ex)
+    if tips:
+        st.markdown(
+            f'<div class="player-tips">'
+            f'<div class="player-tip player-tip-do">'
+            f'<span class="player-tip-label">✅ DO</span>{tips["do"]}'
+            f'</div>'
+            f'<div class="player-tip player-tip-dont">'
+            f'<span class="player-tip-label">❌ DON\'T</span>{tips["dont"]}'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-    # Initialize coach messages
-    if not st.session_state.coach_messages:
-        greeting = get_greeting()
+    # Navigation buttons
+    st.markdown("")  # spacer
+    nav_cols = st.columns([1, 3, 1])
 
-        # Add Garmin context to greeting if available
-        garmin_data = st.session_state.get("garmin_data")
-        if garmin_data and garmin_data.get("body_battery", 0) > 0:
-            bb = garmin_data["body_battery"]
-            greeting += f"\n\n⌚ ה-Body Battery שלך: {bb}"
+    with nav_cols[0]:
+        if current_idx > 0:
+            if st.button("←", key="prev_ex"):
+                st.session_state.tg_exercise_idx = current_idx - 1
+                st.rerun()
 
-        st.session_state.coach_messages = [
-            {"role": "coach", "content": greeting}
-        ]
-        save_message(user_id, "coach", greeting)
-
-    # Render chat messages
-    for msg in st.session_state.coach_messages:
-        if msg["role"] == "coach":
-            st.markdown(
-                f'<div class="chat-msg coach">'
-                f'<span class="chat-avatar">🤖</span>'
-                f'<div class="chat-bubble coach">{msg["content"]}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+    with nav_cols[1]:
+        if current_idx < total - 1:
+            btn_label = "הבא ←"
         else:
-            st.markdown(
-                f'<div class="chat-msg user">'
-                f'<div class="chat-bubble user">{msg["content"]}</div>'
-                f'<span class="chat-avatar">🏃</span>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+            btn_label = "סיים אימון! 🎉"
 
-    # Coach flow
-    step = st.session_state.coach_step
-
-    if step == "greeting":
-        st.markdown("**איך רמת האנרגיה שלך?**")
-        cols = st.columns(3)
-        for idx, (level, info) in enumerate(ENERGY_LEVELS.items()):
-            with cols[idx]:
-                if st.button(
-                    f'{info["emoji"]} {info["label"]}',
-                    key=f"energy_{level}",
-                    use_container_width=True,
-                ):
-                    st.session_state.coach_energy = level
-                    user_msg = f'{info["emoji"]} {info["label"]}'
-                    st.session_state.coach_messages.append(
-                        {"role": "user", "content": user_msg}
-                    )
-                    save_message(user_id, "user", user_msg)
-
-                    suggestion = get_workout_suggestion(level)
-                    coach_msg = f"{suggestion}\n\nרוצה להתחיל אימון?"
-                    st.session_state.coach_messages.append(
-                        {"role": "coach", "content": coach_msg}
-                    )
-                    save_message(user_id, "coach", coach_msg)
-                    st.session_state.coach_step = "want_workout"
-                    st.rerun()
-
-    elif step == "want_workout":
-        cols = st.columns(2)
-        with cols[0]:
-            if st.button("כן! 💪", key="want_yes", use_container_width=True,
-                          type="primary"):
-                st.session_state.coach_messages.append(
-                    {"role": "user", "content": "כן! 💪"}
-                )
-                save_message(user_id, "user", "כן! 💪")
-
-                coach_msg = "מעולה! איזה סוג אימון?"
-                st.session_state.coach_messages.append(
-                    {"role": "coach", "content": coach_msg}
-                )
-                save_message(user_id, "coach", coach_msg)
-                st.session_state.coach_step = "choose_type"
-                st.session_state.coach_persuade_count = 0
+        if st.button(btn_label, key="next_ex",
+                      use_container_width=True, type="primary"):
+            if current_idx < total - 1:
+                st.session_state.tg_exercise_idx = current_idx + 1
+                st.rerun()
+            else:
+                _finish_workout()
                 st.rerun()
 
-        with cols[1]:
-            if st.button("לא היום", key="want_no", use_container_width=True):
-                st.session_state.coach_messages.append(
-                    {"role": "user", "content": "לא היום"}
-                )
-                save_message(user_id, "user", "לא היום")
-
-                # Try to persuade (up to 2 times)
-                persuade_count = st.session_state.get("coach_persuade_count", 0)
-                if persuade_count < 2:
-                    coach_msg = get_persuasion_message()
-                    st.session_state.coach_persuade_count = persuade_count + 1
-                    st.session_state.coach_messages.append(
-                        {"role": "coach", "content": coach_msg}
-                    )
-                    save_message(user_id, "coach", coach_msg)
-                    # Stay on want_workout step
-                    st.rerun()
-                else:
-                    coach_msg = get_no_workout_message()
-                    st.session_state.coach_messages.append(
-                        {"role": "coach", "content": coach_msg}
-                    )
-                    save_message(user_id, "coach", coach_msg)
-                    st.session_state.coach_step = "done"
-                    st.session_state.coach_persuade_count = 0
-                    st.rerun()
-
-    elif step == "choose_type":
-        energy = st.session_state.coach_energy or "medium"
-        suggested_ids = get_template_suggestion(energy)
-        suggested_templates = [
-            get_template_by_id(tid) for tid in suggested_ids
-        ]
-        suggested_templates = [t for t in suggested_templates if t]
-
-        st.markdown("**הצעות עבורך:**")
-        for t in suggested_templates[:3]:
-            tmpl_svg = get_template_muscle_svg(t, size=40)
-            render_svg_html(
-                f'<div class="coach-suggestion-card">'
-                f'{tmpl_svg}'
-                f'<span>{t["name"]}</span>'
-                f'</div>',
-                height=80,
-            )
-            if st.button(
-                f'{t["emoji"]} {t["name"]}',
-                key=f'coach_tmpl_{t["id"]}',
-                use_container_width=True,
-            ):
-                st.session_state.coach_messages.append(
-                    {"role": "user", "content": f'{t["emoji"]} {t["name"]}'}
-                )
-                save_message(user_id, "user", t["name"])
-
-                st.session_state.selected_template = t
-                coach_msg = f'בחירה מצוינת! {t["name"]} - בוא נמלא את הפרטים! ➡️'
-                st.session_state.coach_messages.append(
-                    {"role": "coach", "content": coach_msg}
-                )
-                save_message(user_id, "coach", coach_msg)
-                st.session_state.coach_step = "done"
-                st.session_state.page = "log"
-                st.rerun()
-
-        if st.button("אימון אחר...", key="coach_other",
-                      use_container_width=True):
-            st.session_state.page = "log"
-            st.session_state.coach_step = "done"
+    with nav_cols[2]:
+        if st.button("✕", key="quit_workout"):
+            _reset_flow()
             st.rerun()
 
-    elif step == "done":
-        if st.button("שיחה חדשה 🔄", use_container_width=True):
-            st.session_state.coach_step = "greeting"
-            st.session_state.coach_messages = []
-            st.session_state.coach_energy = None
-            st.session_state.coach_persuade_count = 0
+
+def _finish_workout():
+    """Auto-log the workout and go to summary."""
+    template = st.session_state.tg_template
+    exercises = st.session_state.tg_exercises
+
+    # Auto-save workout (no form!)
+    workout = {
+        "workout_type": template.get("workout_type", "אחר"),
+        "training_type": template.get("training_type", "כוח"),
+        "target_muscle": st.session_state.tg_muscle,
+        "duration_minutes": template.get("duration_minutes", 10),
+        "difficulty": 5,
+        "feeling": "אנרגיה",
+        "equipment": template.get("equipment", []),
+        "location": template.get("location", "בבית"),
+        "company": "לבד",
+        "template_id": template.get("id"),
+    }
+    save_workout(st.session_state.user_id, workout)
+
+    st.session_state.tg_workout_done = True
+    st.session_state.tg_state = "summary"
+
+
+# ------------------------------------
+# STATE 5: Summary (Ghost Coach)
+# ------------------------------------
+def render_summary():
+    template = st.session_state.tg_template
+    exercises = st.session_state.tg_exercises
+    garmin_data = st.session_state.garmin_data
+    context = st.session_state.tg_context
+    muscle = st.session_state.tg_muscle
+
+    # Done emoji
+    st.markdown(
+        '<div class="summary-container">'
+        '<div class="summary-done-emoji">🎉</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<h2 class="section-title">סיימת!</h2>',
+        unsafe_allow_html=True,
+    )
+
+    # Stats
+    duration = template.get("duration_minutes", 0) if template else 0
+    ex_count = len(exercises) if exercises else 0
+    muscle_display = muscle if muscle else "גוף מלא"
+
+    st.markdown(
+        f'<div class="summary-stats">'
+        f'<div class="summary-stat">'
+        f'<div class="summary-stat-value">{ex_count}</div>'
+        f'<div class="summary-stat-label">תרגילים</div>'
+        f'</div>'
+        f'<div class="summary-stat">'
+        f'<div class="summary-stat-value">{duration}</div>'
+        f'<div class="summary-stat-label">דקות</div>'
+        f'</div>'
+        f'<div class="summary-stat">'
+        f'<div class="summary-stat-value">{muscle_display}</div>'
+        f'<div class="summary-stat-label">קבוצת שריר</div>'
+        f'</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Ghost Coach message
+    coach_msg = get_ghost_coach_message(
+        context=context,
+        exercises_count=ex_count,
+        duration=duration,
+        muscle=muscle,
+        garmin_data=garmin_data,
+    )
+    st.markdown(
+        f'<div class="summary-coach-msg">🤖 {coach_msg}</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Streak counter
+    week_workouts = get_week_workouts(st.session_state.user_id)
+    workout_days = {w.get("workout_date") for w in week_workouts}
+    streak = len(workout_days)
+    if streak > 1:
+        st.markdown(
+            f'<div class="summary-streak">🔥 רצף: {streak} ימים השבוע!</div>',
+            unsafe_allow_html=True,
+        )
+
+    # Weekly insight
+    insight = get_weekly_insight(week_workouts)
+    st.markdown(
+        f'<div class="glass-card" style="text-align:center;">{insight}</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Action buttons
+    st.markdown("")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("עוד אימון! 💪", key="another_workout",
+                      use_container_width=True, type="primary"):
+            _reset_flow()
+            st.rerun()
+    with col2:
+        if st.button("סיימתי להיום ✌️", key="done_today",
+                      use_container_width=True):
+            _reset_flow()
             st.rerun()
 
 
 # ------------------------------------
-# Main App
+# Main App - State Machine Router
 # ------------------------------------
 def main():
     if not st.session_state.authenticated:
         render_auth()
         return
 
-    render_nav()
+    state = st.session_state.tg_state
 
-    st.markdown("---")
-
-    page = st.session_state.page
-    if page == "dashboard":
-        render_dashboard()
-    elif page == "log":
-        render_log_workout()
-    elif page == "coach":
-        render_coach()
-    elif page == "templates":
-        render_templates()
+    if state == "context":
+        render_context_selection()
+    elif state == "gear":
+        render_gear_selection()
+    elif state == "muscle":
+        render_muscle_map()
+    elif state == "player":
+        render_workout_player()
+    elif state == "summary":
+        render_summary()
+    else:
+        # Fallback
+        _reset_flow()
+        render_context_selection()
 
 
 if __name__ == "__main__":
