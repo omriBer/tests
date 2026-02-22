@@ -1,0 +1,76 @@
+# HolmesPlace / Fizikal - הגדרות הזמנת חוגים אוטומטית
+# =====================================================
+# ערוך קובץ זה עם הפרטים שלך לפני הרצה ראשונה
+
+credentials:
+  # מספר טלפון לרישום (כפי שנרשמת באפליקציה)
+  phone: "+972501234567"
+  # אם האפליקציה תומכת כניסה עם אימייל (אופציונלי)
+  email: ""
+  # סיסמה (אם נדרש - חלק מהגרסאות תומכות בסיסמה)
+  password: ""
+  # קוד מועדון/גן (Club Code) - כפי שמופיע בהגדרות האפליקציה
+  club_code: "holmesplace"
+
+# הגדרות עתות הרצה
+schedule:
+  # כמה ימים מראש לבצע הזמנה (הולמס פלייס מאפשר הרשמה 24 שעות מראש = 1)
+  book_days_ahead: 1
+  # שעת הרצה יומית של הסקריפט (מומלץ: מספר דקות אחרי שנפתחת ההרשמה)
+  # לדוגמה: "07:05" אם ההרשמה נפתחת ב-07:00
+  daily_run_time: "07:05"
+  # אזור זמן
+  timezone: "Asia/Jerusalem"
+
+# רשימת חוגים מועדפים לפי עדיפות (הראשון = הגבוהה ביותר)
+preferences:
+  - name: "סטפ"           # שם החוג (חלקי גם בסדר)
+    days: ["ראשון", "שלישי"]  # ימים: ראשון/שני/שלישי/רביעי/חמישי/שישי/שבת
+    time_from: "07:00"    # הזמנה החל מהשעה הזו
+    time_to: "09:00"      # הזמנה עד השעה הזו
+    instructor: null      # שם מדריך (null = כל מדריך)
+    max_bookings_per_week: 2  # מקסימום הזמנות שבועיות לחוג זה
+
+  - name: "ספינינג"
+    days: ["שני", "רביעי", "חמישי"]
+    time_from: "18:00"
+    time_to: "21:00"
+    instructor: null
+    max_bookings_per_week: 3
+
+  - name: "יוגה"
+    days: ["שלישי", "חמישי"]
+    time_from: "18:00"
+    time_to: "20:00"
+    instructor: null
+    max_bookings_per_week: 2
+
+  - name: "פילאטיס"
+    days: ["ראשון", "שני", "רביעי"]
+    time_from: "09:00"
+    time_to: "11:00"
+    instructor: null
+    max_bookings_per_week: 2
+
+# הגדרות התראות (אופציונלי)
+notifications:
+  # שלח SMS/הודעה בהצלחה (דרך Telegram Bot או Email)
+  enabled: false
+  # Telegram Bot Token (אופציונלי)
+  telegram_bot_token: ""
+  telegram_chat_id: ""
+  # אימייל (אופציונלי)
+  email_to: ""
+
+# הגדרות מתקדמות
+advanced:
+  # השהייה בין פעולות (שניות) - להגן מפני חסימה
+  delay_between_actions: 1.5
+  # מקסימום ניסיונות חוזרים אם הפעולה נכשלת
+  max_retries: 3
+  # הפעל בראש headless (ללא חלון דפדפן) - true מומלץ לשרת
+  headless: true
+  # נתיב לשמירת לוג
+  log_file: "holmesplace_booker.log"
+  # נתיב לשמירת קובץ session (כדי לא להתחבר בכל פעם מחדש)
+  session_file: ".fizikal_session.json"
