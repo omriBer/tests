@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://app.fizikal.co.il"
 API_BASE = f"{BASE_URL}/api"
+UNIFIED_API = f"{BASE_URL}/api/unified"  # Fisikal Unified API (same pattern as cuttingedge.fisikal.com)
 
 
 class FizikalAPIError(Exception):
@@ -102,16 +103,20 @@ class FizikalClient:
         await self._setup_api_interceptor()
 
     async def close(self):
-        """סגור דפדפן ושמור session"""
+        """סגור דפדפן ושמור session (כולל fisikal_token)"""
         if self._page:
             try:
                 cookies = await self._page.context.cookies()
                 self._session_data["cookies"] = cookies
-                with open(self.session_file, "w") as f:
-                    json.dump(self._session_data, f, ensure_ascii=False, indent=2)
-                logger.info("Session נשמר")
             except Exception as e:
-                logger.warning(f"שגיאה בשמירת session: {e}")
+                logger.warning(f"שגיאה בשמירת cookies: {e}")
+
+        try:
+            with open(self.session_file, "w") as f:
+                json.dump(self._session_data, f, ensure_ascii=False, indent=2)
+            logger.info("Session נשמר")
+        except Exception as e:
+            logger.warning(f"שגיאה בשמירת session: {e}")
 
         if self._browser:
             await self._browser.close()
@@ -169,22 +174,29 @@ class FizikalClient:
     async def login(self) -> bool:
         """
         כניסה למערכת פיזיקל.
-        תומך בשתי שיטות:
-        1. אימות דרך מספר טלפון + OTP
-        2. אימות דרך אימייל + סיסמה
+        שיטות (לפי סדר עדיפות):
+        1. Unified API ישיר עם אימייל + סיסמה (מהיר, ללא דפדפן)
+        2. אימות דרך מספר טלפון + OTP (דרך דפדפן)
+        3. אימות דרך אימייל + סיסמה (דרך ממשק דפדפן)
         """
         # בדוק אם session עדיין תקף
-        if await self._check_session():
-            logger.info("Session קיים תקף - לא נדרשת התחברות")
+        if self._session_data.get("fisikal_token") or self._session_data.get("auth_token"):
+            logger.info("Token קיים - ממשיך ללא כניסה מחדש")
             return True
-
-        logger.info(f"מתחבר ל-{BASE_URL}...")
-        await self._page.goto(BASE_URL, wait_until="networkidle")
-        await self._wait(2)
 
         phone = self.creds.get("phone", "").strip()
         email = self.creds.get("email", "").strip()
         password = self.creds.get("password", "").strip()
+
+        # נסה Unified API קודם (מהיר יותר - ללא דפדפן)
+        if email and password:
+            if await self._login_via_unified_api(email, password):
+                return True
+
+        # נפול חזרה לאוטומציה של דפדפן
+        logger.info(f"עובר לכניסה דרך דפדפן: {BASE_URL}...")
+        await self._page.goto(BASE_URL, wait_until="networkidle")
+        await self._wait(2)
 
         if phone:
             return await self._login_phone(phone)
@@ -192,6 +204,61 @@ class FizikalClient:
             return await self._login_email(email, password)
         else:
             raise FizikalAuthError("לא הוגדרו פרטי כניסה ב-config.yaml")
+
+    async def _login_via_unified_api(self, email: str, password: str) -> bool:
+        """
+        כניסה ישירה דרך Fisikal Unified API.
+        POST /api/unified/oauth/token עם strategy=email_password.
+        מחזיר fisikal_token בהצלחה.
+        """
+        import httpx
+
+        endpoint = f"{UNIFIED_API}/oauth/token"
+        payload = {
+            "strategy": "email_password",
+            "email": email,
+            "password": password,
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": BASE_URL,
+            "Referer": BASE_URL,
+            "User-Agent": (
+                "Mozilla/5.0 (Linux; Android 12; Pixel 6) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Mobile Safari/537.36"
+            ),
+        }
+
+        try:
+            async with httpx.AsyncClient(follow_redirects=True) as client:
+                resp = await client.post(endpoint, json=payload, headers=headers, timeout=15)
+                logger.debug(f"Unified API auth response: {resp.status_code}")
+
+                if resp.status_code in (200, 201):
+                    data = resp.json()
+                    # Unified API מחזיר fisikal_token
+                    token = (
+                        data.get("fisikal_token")
+                        or data.get("token")
+                        or data.get("accessToken")
+                        or data.get("access_token")
+                    )
+                    if token:
+                        self._session_data["fisikal_token"] = token
+                        self._session_data["auth_token"] = token
+                        logger.info("כניסה דרך Unified API הצליחה")
+                        logger.debug(f"Token: {token[:20]}...")
+                        return True
+                    else:
+                        logger.debug(f"Unified API: אין token בתגובה: {list(data.keys())}")
+                else:
+                    logger.debug(f"Unified API auth נכשל: {resp.status_code} {resp.text[:200]}")
+        except Exception as e:
+            logger.debug(f"Unified API auth exception: {e}")
+
+        return False
 
     async def _check_session(self) -> bool:
         """בדוק אם ה-session הקיים עדיין תקף"""
@@ -415,13 +482,17 @@ class FizikalClient:
         return classes
 
     async def _get_schedule_via_api(self, target_date: str) -> list[dict]:
-        """ניסיון לגשת ל-API ישירות"""
+        """ניסיון לגשת ל-API ישירות - כולל Unified API endpoints"""
         import httpx
 
-        token = self._session_data.get("auth_token", "")
+        token = self._session_data.get("fisikal_token") or self._session_data.get("auth_token", "")
         cookies = {c["name"]: c["value"] for c in self._session_data.get("cookies", [])}
 
+        # Unified API endpoints (לפי תיעוד Fisikal) + fallbacks
         api_endpoints = [
+            f"{UNIFIED_API}/lesson_sessions?date={target_date}",
+            f"{UNIFIED_API}/lessons?date={target_date}",
+            f"{UNIFIED_API}/schedule?date={target_date}",
             f"{API_BASE}/schedule?date={target_date}",
             f"{API_BASE}/classes?date={target_date}",
             f"{API_BASE}/lessons?date={target_date}",
@@ -435,16 +506,19 @@ class FizikalClient:
             "Origin": BASE_URL,
         }
         if token:
+            headers["X-Fisikal-Token"] = token
             headers["Authorization"] = f"Bearer {token}"
 
-        async with httpx.AsyncClient(cookies=cookies) as client:
+        async with httpx.AsyncClient(cookies=cookies, follow_redirects=True) as client:
             for endpoint in api_endpoints:
                 try:
                     resp = await client.get(endpoint, headers=headers, timeout=10)
                     if resp.status_code == 200:
                         data = resp.json()
-                        logger.info(f"API הצליח: {endpoint}")
-                        return self._parse_api_schedule(data)
+                        parsed = self._parse_api_schedule(data)
+                        if parsed:
+                            logger.info(f"API הצליח: {endpoint} - {len(parsed)} חוגים")
+                            return parsed
                 except Exception as e:
                     logger.debug(f"API {endpoint} נכשל: {e}")
 
@@ -660,10 +734,10 @@ class FizikalClient:
         return await self._book_via_browser(class_info)
 
     async def _book_via_api(self, class_id: str) -> bool:
-        """נסה הרשמה דרך API ישיר"""
+        """נסה הרשמה דרך API ישיר - כולל Unified API endpoints"""
         import httpx
 
-        token = self._session_data.get("auth_token", "")
+        token = self._session_data.get("fisikal_token") or self._session_data.get("auth_token", "")
         cookies = {c["name"]: c["value"] for c in self._session_data.get("cookies", [])}
 
         headers = {
@@ -673,9 +747,14 @@ class FizikalClient:
             "Origin": BASE_URL,
         }
         if token:
+            headers["X-Fisikal-Token"] = token
             headers["Authorization"] = f"Bearer {token}"
 
+        # Unified API booking endpoints (לפי תיעוד Fisikal) + fallbacks
         book_endpoints = [
+            (f"{UNIFIED_API}/lesson_sessions/{class_id}/book", {}),
+            (f"{UNIFIED_API}/lesson_sessions/{class_id}/register", {}),
+            (f"{UNIFIED_API}/bookings", {"lesson_session_id": class_id}),
             (f"{API_BASE}/book", {"classId": class_id}),
             (f"{API_BASE}/classes/{class_id}/book", {}),
             (f"{API_BASE}/lessons/{class_id}/register", {}),
@@ -683,7 +762,7 @@ class FizikalClient:
             (f"{API_BASE}/registration", {"lessonId": class_id}),
         ]
 
-        async with httpx.AsyncClient(cookies=cookies) as client:
+        async with httpx.AsyncClient(cookies=cookies, follow_redirects=True) as client:
             for endpoint, payload in book_endpoints:
                 try:
                     resp = await client.post(
@@ -691,7 +770,6 @@ class FizikalClient:
                     )
                     if resp.status_code in (200, 201):
                         data = resp.json()
-                        # בדוק הצלחה בתגובה
                         if self._is_booking_success(data):
                             logger.info(f"הרשמה הצליחה דרך API: {endpoint}")
                             return True
