@@ -222,11 +222,40 @@ URL: https://2zqfpmejabsauqxbkbcwys.streamlit.app/
 
 **Build:** `npm run build` עובר בהצלחה, 150kB First Load JS
 
+### 14. מעקב שתיה - שיטה לפטינית
+**תאריך:** 2026-03-13
+**סטטוס:** ✅ הושלם
+
+**מטרה:** אזור מעקב שתיה מלא עם אינטגרציית שיטה לפטינית (rules.json)
+
+**קבצים חדשים:**
+- `lib/waterStorage.ts` - localStorage wrapper: כוסות יומיות, pre-meal confirmations, חלון אכילה, שלב לפטיני
+- `app/water/page.tsx` - עמוד שתיה מלא
+
+**קבצים שישתנו:**
+- `app/page.tsx` - הוספת WaterButton ליד MealsButton
+
+**פיצ'רים לממש:**
+1. ✅ מעקב כוסות יומי (יעד 2.5L = 10 כוסות)
+2. ✅ מד ויזואלי (טיפות/כוסות)
+3. ✅ אישור "שתיתי 2 כוסות לפני" לכל ארוחה (בוקר/צהריים/ערב) - כלל לפטיני מרכזי
+4. ✅ מעקב חלון אכילה (8-12 שעות)
+5. ✅ שלב לפטיני נוכחי (מחושב מתאריך התחלה)
+6. ✅ כרטיס חוקי השלב הנוכחי
+
+**מבנה נתונים (localStorage):**
+- `fitnessmate_water` - WaterEntry[] עם timestamp, glasses, type
+- `fitnessmate_leptin_start` - תאריך התחלת התוכנית
+- `fitnessmate_eating_window` - { start: timestamp | null, durationHours: 10 }
+
+---
+
 ## בעיות פתוחות
 - PWA icons הם SVG placeholders (צריך להחליף ל-PNG אמיתיים)
 - Garmin רץ בדמו (demo data only)
 - לבדוק שה-GIFs מ-free-exercise-db נטענים (GitHub raw URLs)
 - דיפלוי ל-Vercel (push to GitHub → auto-deploy)
+- אזור תרגילים: חסר חיפוש חופשי (MuscleWiki style) - כרגע רק SVG אינטראקטיבי
 
 ## מבנה הפרויקט
 

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import ContextCards from "@/components/ContextCards";
 import GearCards from "@/components/GearCards";
 import MuscleMap from "@/components/MuscleMap";
@@ -10,8 +11,40 @@ import Summary from "@/components/Summary";
 import GhostCoach from "@/components/GhostCoach";
 import { matchTemplates, type ContextKey, type GearKey, type Template } from "@/lib/templates";
 import { saveWorkout } from "@/lib/storage";
+import { getTodayTotal, DAILY_GOAL } from "@/lib/mealStorage";
+import { getTodayGlasses, DAILY_GOAL_GLASSES } from "@/lib/waterStorage";
 
 type Screen = "context" | "gear" | "muscle" | "player" | "summary";
+
+// כפתורים צפים לניווט
+function FloatingNav() {
+  const calories = getTodayTotal();
+  const calPct = calories / DAILY_GOAL;
+  const calColor = calPct < 0.6 ? "#00E676" : calPct < 0.85 ? "#FFD60A" : "#FF5252";
+
+  const glasses = getTodayGlasses();
+  const waterPct = glasses / DAILY_GOAL_GLASSES;
+  const waterColor = waterPct < 0.5 ? "#00B8FF" : waterPct < 0.85 ? "#00E676" : "#FFD60A";
+
+  return (
+    <div className="fixed top-4 left-4 z-40 flex gap-2">
+      <Link
+        href="/meals"
+        className="flex items-center gap-1.5 px-3 py-2 glass glass-hover rounded-full text-sm font-bold"
+        style={{ color: calColor }}
+      >
+        🍽 {calories > 0 ? `${calories} קל` : "ארוחות"}
+      </Link>
+      <Link
+        href="/water"
+        className="flex items-center gap-1.5 px-3 py-2 glass glass-hover rounded-full text-sm font-bold"
+        style={{ color: waterColor }}
+      >
+        💧 {glasses > 0 ? `${glasses}/${DAILY_GOAL_GLASSES}` : "שתיה"}
+      </Link>
+    </div>
+  );
+}
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("context");
@@ -121,6 +154,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
+            <FloatingNav />
             <ContextCards onSelect={handleContextSelect} />
           </motion.div>
         )}
