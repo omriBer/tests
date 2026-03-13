@@ -7,7 +7,25 @@
       "WebFetch(domain:github.com)",
       "Bash(dir:*)",
       "Bash(python:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(git fetch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(wc:*)",
+      "Bash(where:*)",
+      "Bash(pip show:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(node -e:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python3:*)",
+      "Bash(iconv:*)",
+      "Bash(cd \"C:\\\\Users\\\\napob\\\\OneDrive\\\\Documents\\\\GitHub\\\\tests\" && npm run build 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\napob\\\\OneDrive\\\\Documents\\\\GitHub\\\\tests\" && npx tsc --noEmit 2>&1 | head -40)",
+      "Bash(cd \"C:\\\\Users\\\\napob\\\\OneDrive\\\\Documents\\\\GitHub\\\\tests\" && gh run list --limit 3 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\napob\\\\OneDrive\\\\Documents\\\\GitHub\\\\tests\" && npx vercel --version 2>&1 | head -3)",
+      "Bash(cd \"C:\\\\Users\\\\napob\\\\OneDrive\\\\Documents\\\\GitHub\\\\tests\" && npx vercel ls 2>&1 | head -20)"
     ]
   }
 }

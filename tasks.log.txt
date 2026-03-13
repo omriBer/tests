@@ -1,56 +1,48 @@
-"Refactor app.py to become a Workout Matcher for 'Couch Potatoes':
+The "React + Vercel" Extreme Transformation Prompt
+Goal: Rebuild the entire application as a high-end, mobile-first Next.js/React web app. The UI must be a Tinder-style "Workout Matcher" for Couch Potatoes, abandoning the outdated Streamlit look.
 
-Visual Selection: Replace render_dashboard and render_log_workout with a 3-step visual card flow (Context, Gear, Muscle Group).
+1. Tech Stack & Deployment:
 
-Instant Matching: Once a muscle group is selected, skip all forms and trigger a 4-minute workout immediately.
+Framework: Next.js (App Router), Tailwind CSS, Framer Motion (for animations).
 
-The Player: Create a dedicated workout view where the Looping GIF is the hero (80% of the screen).
+Vercel Ready: Ensure the project structure is optimized for Vercel deployment (e.g., package.json, next.config.js).
 
-No Writing/Logging: Remove all text inputs, difficulty sliders, and feeling selections. The goal is execution, not documentation.
+PWA Support: Implement a manifest.json and service worker so the user can "Add to Home Screen" on iPhone/Android and view it in full-screen.
 
-Simplified Content: Filter exercises_data.py to provide 4 simple steps based on the Context (e.g., if Context is 'Office', use chair-based movements)."
+2. Visual Revolution (The "Tinder" Look):
 
+Aesthetic: Dark Glassmorphism. Deep black backgrounds (#0D1117), frosted-glass cards (rgba(22, 27, 34, 0.7) with blur-lg), and Neon Green (#00E676) action accents.
 
+The Matcher (Home Screen): A vertical stack of large, tactile Image Cards.
 
-The "Tinder-Gym" Total Overhaul Prompt
-Context: The current Streamlit app feels like an outdated administrative form. We need a radical transformation into a high-end, mobile-first "Workout Matcher" that uses a Tinder-like UX to break the friction for "Couch Potatoes".
+Contexts: 🍿 Microwave Hero, 💻 Zoom-Proof Core, 👶 Kid-Toss Cardio, 🍕 Post-Meal Burn.
 
-1. Visual Revolution (UI/UX):
+Gear: ✋ Just Me, 🎒 Basic Gear.
 
-Design Aesthetic: Implement a "Dark Glassmorphism" theme. Background: #0D1117, Cards: rgba(22, 27, 34, 0.7) with 12px blur, Accents: Neon Green (#00E676) and Electric Blue.
+The Muscle Map: A central, interactive SVG body map (ported from muscles.py). Touching a muscle must trigger a neon-glow effect and start the workout instantly.
 
-Component Overhaul: STOP using standard st.selectbox, st.radio, or st.sidebar. Replace them with Custom HTML/CSS Clickable Cards. Use st.components.v1.html or st.markdown with injected CSS to create large, tactile tiles.
+3. The Hero Workout Player:
 
-The Matrix Flow: The home screen must be a clean, vertical scroll of large visual cards:
+Layout: Full-screen mode. The Looping GIF must be the hero, occupying 80-90% of the screen.
 
-Context: (e.g., 🍿 Microwave Hero, 💻 Zoom-Proof Core, 👶 Kid-Toss Cardio).
+Overlays: * A sleek, circular neon progress timer at the top.
 
-Gear: (✋ Just me, 🎒 Basic Gear, 🏋️ Full Gym).
+Floating badges at the bottom: ✅ DO: [Tip] and ❌ X: [Mistake].
 
-Muscle Map: Use the SVG from muscles.py but make it interactive—clicking a body part triggers a neon glow and starts the workout.
+Zero-Friction: Log workouts automatically in the background after the 4-minute circuit ends. No post-workout forms.
 
-2. The Workout Player (Tinder Mode):
+4. Intelligence & Vibe Logic:
 
-Hero Focus: Once an exercise starts, the Looping GIF must occupy 80% of the screen.
+Garmin-Driven UI: Silently sync with Garmin data (Body Battery). If BB is <40, make the "Couch Potato" (Easy) card pulse with a subtle glow.
 
-HUD Overlays:
+Ghost Coach: Repurpose coach.py logic. The coach appears only as a celebratory toast/overlay after a workout to show streaks or "Weekly Insights."
 
-Timer: A sleek, high-contrast circular or horizontal progress bar at the top.
+5. Implementation Steps:
 
-Coaching: Display two prominent floating labels: ✅ DO: [Tip] and ❌ DON'T: [Mistake].
+Setup the Next.js project with Tailwind.
 
-Zero-Form: Remove the "Save Workout" and "How did you feel" sliders. Log the workout automatically in the background upon completion.
+Build the Selection Matrix (Context/Gear/Muscle).
 
-3. Hybrid Intelligence (Garmin & Coach):
+Build the Workout Player with a 60-second timer per step.
 
-Silent Garmin: Keep the Garmin integration but hide the raw data. Use it as a Selection Engine: if Body Battery is low, auto-highlight the "Easy/Couch Potato" cards with a subtle pulse.
-
-The Ghost Coach: The Coach shouldn't be a chatbox. It should be a Smart Overlay that appears only at the end of a workout to celebrate streaks or provide a single, punchy "Weekly Insight" from coach.py.
-
-4. Technical Execution:
-
-Refactor app.py: Create a clean state machine to handle the transitions between [Auth] -> [Selection] -> [Player] -> [Summary].
-
-CSS Injection: Use the existing styles.css but update it with modern flexbox/grid layouts and 24px rounded corners for all elements.
-
-Responsiveness: Every button must be "thumb-sized" (min 44x44px) with no vertical scrolling required during the workout player.
+Integrate the existing exercises_db.json for the workout generation logic (1x Warmup, 2x Effort, 1x Stretch).
