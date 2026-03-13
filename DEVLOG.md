@@ -8,10 +8,26 @@
 ---
 
 ## סטטוס נוכחי
-האפליקציה מדופלית על Streamlit Community Cloud.
-URL: https://2zqfpmejabsauqxbkbcwys.streamlit.app/
+Next.js 15 App Router - פיתוח מקומי (Vercel deployment טרם בוצע)
+
+### מסכים קיימים (2026-03-13)
+- `/` - מסך כניסה ראשי עם לוגו + ניווט לכל המסכים
+- `/workout` - Workout Matcher (Context→Gear→Muscle→Player→Summary)
+- `/meals` - מעקב קלוריות
+- `/water` - מעקב שתיה + שיטה לפטינית
 
 ## מה נעשה עד כה
+
+### מסך כניסה ראשי (2026-03-13)
+- נוסף `/` - Landing page עם לוגו SVG (hexagon + dumbbell + lightning bolt) ו-Framer Motion
+- האימון הועבר מ-`/` ל-`/workout`
+- כל כרטיס ניווט מכיל אינדיקציה חיה:
+  - ארוחות: progress bar + קלוריות נוכחיות / יעד (2000 קל) + הודעת סטטוס
+  - שתיה: progress bar + כוסות נוכחיות / יעד (8) + הודעת סטטוס
+  - צבע הכרטיס משתנה דינמית לפי אחוז היעד
+- FloatingNav באימון עודכן - נוסף כפתור 🏠 לחזרה למסך הכניסה
+
+
 
 ### 1. דיפלוי ל-Streamlit Cloud
 - האפליקציה רצה מהריפו `omriBer/tests`, branch `main`, קובץ ראשי `app.py`

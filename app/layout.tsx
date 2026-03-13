@@ -10,7 +10,7 @@ const heebo = Heebo({
 });
 
 export const metadata: Metadata = {
-  title: "FitnessMate - Workout Matcher",
+  title: "FitnessMate",
   description: "אפליקציית אימונים חכמה - בחר, התאמן, התקדם",
   manifest: "/manifest.json",
   icons: {
