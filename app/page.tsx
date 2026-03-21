@@ -208,6 +208,29 @@ export default function HomePage() {
             </div>
           </Link>
         </motion.div>
+
+        {/* Longevity card */}
+        <motion.div custom={3} variants={cardVariants} initial="hidden" animate="visible">
+          <Link href="/longevity" className="block">
+            <div className="glass glass-hover rounded-2xl p-5 flex items-center gap-4 group">
+              <div
+                className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl flex-shrink-0"
+                style={{ background: "rgba(0,229,204,0.10)", border: "1px solid rgba(0,229,204,0.22)" }}
+              >
+                🧬
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-lg font-bold text-white">Bio-Optimizer</span>
+                  <span className="text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "#00E5CC" }}>
+                    Open ←
+                  </span>
+                </div>
+                <p className="text-[#8B949E] text-xs">Longevity protocol · Attia × Huberman</p>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
       </div>
 
       {/* Footer */}
