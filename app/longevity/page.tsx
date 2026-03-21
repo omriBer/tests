@@ -8,37 +8,45 @@ import {
   Moon,
   Flame,
   Dumbbell,
-  Clock,
-  TrendingUp,
   ChevronRight,
   Check,
-  Plus,
-  Minus,
-  AlertTriangle,
+  X,
+  Zap,
 } from "lucide-react";
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
-  YAxis,
-  Tooltip,
   ResponsiveContainer,
+  Cell,
 } from "recharts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type ActivityType = "rest" | "zone2" | "strength";
+
 type DayLog = {
-  date: string; // YYYY-MM-DD
-  fasting: boolean; // finished eating by 19:00
+  date: string;
+  fasting: boolean;
   hrv: number | "";
   rhr: number | "";
-  sleepQuality: number; // 1-10
+  sleepQuality: number;
   zone2Minutes: number;
   strengthDone: boolean;
 };
 
 const STORAGE_KEY = "longevity_logs_v1";
 const DAYS_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
+
+const BIOHACK_TIPS = [
+  "💡 10 דקות אור שמש בעיניים תוך שעה מהקימה — מסדרות את הקצב הצירקדיאני ומשפרות שינה.",
+  "🚿 90 שניות מים קרים בסיום מקלחת: מעלות HRV ומגבירות נוראדרנלין ב-300%.",
+  "🧘 נשימת קופסה 4-4-4-4 לפני שינה — מורידה קורטיזול ומאיצה כניסה לשינה עמוקה.",
+  "🥩 30g חלבון תוך 30 דקות מסיום אימון כוח — קריטי לסינתזת שריר מיטבית.",
+  "🚶 הליכה קלה 10 דקות אחרי ארוחה — מפחיתה גלוקוז בדם ב-22–30%.",
+  "🌡️ הורד טמפרטורת חדר השינה ל-18°C — גוף צונן נכנס לשינה עמוקה מהר יותר.",
+  "🧊 15 דקות אמבטיית קרח (11–15°C) אחרי אימון כוח מכפילות דופמין ל-3 שעות.",
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,24 +63,13 @@ function getLast7Dates(): string[] {
 }
 
 function emptyLog(date: string): DayLog {
-  return {
-    date,
-    fasting: false,
-    hrv: "",
-    rhr: "",
-    sleepQuality: 7,
-    zone2Minutes: 0,
-    strengthDone: false,
-  };
+  return { date, fasting: false, hrv: "", rhr: "", sleepQuality: 7, zone2Minutes: 0, strengthDone: false };
 }
 
 function loadLogs(): Record<string, DayLog> {
   if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
 }
 
 function saveLogs(logs: Record<string, DayLog>) {
@@ -80,180 +77,74 @@ function saveLogs(logs: Record<string, DayLog>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 }
 
-// ─── Bio-Score Engine 2.0 ─────────────────────────────────────────────────────
-// Nutrition 30% | Recovery (HRV) 25% | Cardio 25% | Strength 20%
+// ─── Bio-Score 2.0 ────────────────────────────────────────────────────────────
+// Nutrition 30% | HRV Recovery 25% | Cardio 25% | Strength 20%
 
 function calcBioScore(logs: Record<string, DayLog>) {
-  const dates = getLast7Dates();
-  const week = dates.map((d) => logs[d] ?? emptyLog(d));
+  const week = getLast7Dates().map((d) => logs[d] ?? emptyLog(d));
 
-  const fastingDays = week.filter((d) => d.fasting).length;
-  const zone2Total = week.reduce((s, d) => s + d.zone2Minutes, 0);
+  const fastingDays      = week.filter((d) => d.fasting).length;
+  const zone2Total       = week.reduce((s, d) => s + d.zone2Minutes, 0);
   const strengthSessions = week.filter((d) => d.strengthDone).length;
 
-  // HRV-based recovery (35 ms target)
   const hrvEntries = week.filter((d) => d.hrv !== "" && Number(d.hrv) > 0);
   const avgHRV =
     hrvEntries.length > 0
       ? hrvEntries.reduce((s, d) => s + Number(d.hrv), 0) / hrvEntries.length
       : 0;
-  const daysHRVMet = hrvEntries.filter((d) => Number(d.hrv) >= 35).length;
 
-  // Sleep still logged for display only
-  const sleepEntries = week.filter((d) => d.sleepQuality > 0);
-  const avgSleep =
-    sleepEntries.length > 0
-      ? sleepEntries.reduce((s, d) => s + d.sleepQuality, 0) / sleepEntries.length
-      : 0;
-
-  const nutrition  = (fastingDays / 7)                 * 100 * 0.3;   // 30%
-  const recovery   = Math.min(avgHRV / 35, 1)          * 100 * 0.25;  // 25%
-  const cardio     = Math.min(zone2Total / 150, 1)     * 100 * 0.25;  // 25%
-  const strength   = Math.min(strengthSessions / 2, 1) * 100 * 0.2;   // 20%
+  const nutrition = (fastingDays / 7)                  * 100 * 0.3;
+  const recovery  = Math.min(avgHRV / 35, 1)           * 100 * 0.25;
+  const cardio    = Math.min(zone2Total / 150, 1)      * 100 * 0.25;
+  const strength  = Math.min(strengthSessions / 2, 1)  * 100 * 0.2;
 
   return {
     score: Math.round(nutrition + recovery + cardio + strength),
-    fastingDays,
-    zone2Total,
-    strengthSessions,
-    avgSleep: Math.round(avgSleep * 10) / 10,
+    fastingDays, zone2Total, strengthSessions,
     avgHRV: Math.round(avgHRV * 10) / 10,
-    daysHRVMet,
     pillars: { nutrition, recovery, cardio, strength },
   };
 }
 
-// ─── Score Circle ─────────────────────────────────────────────────────────────
-
-function ScoreCircle({ score }: { score: number }) {
-  const r = 80;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (score / 100) * circ;
-  const color = score >= 75 ? "#00E5CC" : score >= 50 ? "#FFD60A" : "#FF5252";
-  const glow =
-    score >= 75 ? "rgba(0,229,204,0.4)" : score >= 50 ? "rgba(255,214,10,0.35)" : "rgba(255,82,82,0.35)";
-
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
-      <svg width={200} height={200} className="absolute inset-0 -rotate-90">
-        <defs>
-          <filter id="scoreGlow">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <circle cx={100} cy={100} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={14} />
-        <circle
-          cx={100} cy={100} r={r} fill="none" stroke={color} strokeWidth={14}
-          strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
-          filter="url(#scoreGlow)"
-          style={{ transition: "stroke-dashoffset 0.8s ease, stroke 0.4s ease" }}
-        />
-      </svg>
-      <div className="flex flex-col items-center z-10">
-        <span className="text-5xl font-black tabular-nums" style={{ color, textShadow: `0 0 20px ${glow}` }}>
-          {score}
-        </span>
-        <span className="text-xs text-slate-400 font-medium tracking-widest uppercase mt-1">Bio-Score</span>
-      </div>
-    </div>
+function dayScore(log: DayLog): number {
+  const hrv = log.hrv !== "" ? Number(log.hrv) : 0;
+  return Math.round(
+    (log.fasting ? 1 / 7 : 0)          * 100 * 0.3 +
+    Math.min(hrv / 35, 1)              * 100 * 0.25 +
+    Math.min(log.zone2Minutes / 150, 1) * 100 * 0.25 +
+    (log.strengthDone ? 0.5 : 0)       * 100 * 0.2
   );
 }
 
-// ─── Pillar Card ──────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-function PillarCard({
-  icon, title, value, target, unit, color, score,
-}: {
-  icon: React.ReactNode; title: string; value: string; target: string;
-  unit: string; color: string; score: number;
-}) {
-  const pct = Math.min(score / 100, 1);
-  return (
-    <div
-      className="rounded-2xl p-4 flex flex-col gap-3"
-      style={{ background: "rgba(15,23,42,0.85)", border: "1px solid rgba(255,255,255,0.08)" }}
-    >
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}1A`, border: `1px solid ${color}40` }}>
-          {icon}
-        </div>
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</span>
-      </div>
-      <div>
-        <span className="text-xl font-bold text-white">{value}</span>
-        <span className="text-slate-500 text-xs me-1">{unit}</span>
-      </div>
-      <div className="text-xs text-slate-500">יעד: {target}</div>
-      <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct * 100}%`, backgroundColor: color }} />
-      </div>
-    </div>
-  );
-}
-
-// ─── Stat Box ─────────────────────────────────────────────────────────────────
-
-function StatBox({ label, value, color, target }: { label: string; value: string; color: string; target: string }) {
-  return (
-    <div className="rounded-xl p-3 flex flex-col gap-1" style={{ background: `${color}08`, border: `1px solid ${color}20` }}>
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="text-lg font-bold tabular-nums" style={{ color }}>{value}</p>
-      <p className="text-xs text-slate-600">{target}</p>
-    </div>
-  );
-}
-
-// ─── Toggle Switch ────────────────────────────────────────────────────────────
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
-  return (
-    <button
-      onClick={onChange}
-      className="relative w-14 h-7 rounded-full transition-colors duration-300 flex-shrink-0"
-      style={{
-        background: checked ? "rgba(0,229,204,0.3)" : "rgba(255,255,255,0.08)",
-        border: checked ? "1px solid rgba(0,229,204,0.6)" : "1px solid rgba(255,255,255,0.1)",
-      }}
-    >
-      <span
-        className="absolute top-1 w-5 h-5 rounded-full transition-all duration-300 flex items-center justify-center"
-        style={{ left: checked ? "calc(100% - 24px)" : "4px", background: checked ? "#00E5CC" : "#475569" }}
-      >
-        {checked && <Check size={12} color="#000" />}
-      </span>
-    </button>
-  );
-}
-
-// ─── Dot badge ────────────────────────────────────────────────────────────────
-
-function Dot({ active, color, label }: { active: boolean; color: string; label: string }) {
+function StatusBadge({ done, pending = "ממתין לעדכון" }: { done: boolean; pending?: string }) {
   return (
     <span
-      className="text-xs px-1.5 py-0.5 rounded-md font-medium transition-all"
-      style={{
-        background: active ? `${color}20` : "rgba(255,255,255,0.04)",
-        border: `1px solid ${active ? `${color}50` : "rgba(255,255,255,0.06)"}`,
-        color: active ? color : "#334155",
-      }}
+      className={`inline-flex text-xs font-bold px-2 py-0.5 rounded-full border ${
+        done
+          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+          : "bg-slate-800/80 text-slate-500 border-slate-700"
+      }`}
     >
-      {label}
+      {done ? "בוצע ✓" : pending}
     </span>
   );
 }
 
-// ─── Custom Tooltip ───────────────────────────────────────────────────────────
-
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
-  if (!active || !payload?.length) return null;
+function MiniBar({ label, pct, color }: { label: string; pct: number; color: string }) {
   return (
-    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "rgba(2,6,23,0.95)", border: "1px solid rgba(255,255,255,0.1)" }}>
-      <p className="text-slate-400">{label}</p>
-      <p className="text-teal-400 font-bold">{payload[0].value}</p>
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-slate-600 w-10 text-left shrink-0">{label}</span>
+      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${Math.min(pct, 1) * 100}%`, backgroundColor: color }}
+        />
+      </div>
+      <span className="text-xs tabular-nums w-7 text-left shrink-0" style={{ color }}>
+        {Math.round(Math.min(pct, 1) * 100)}%
+      </span>
     </div>
   );
 }
@@ -261,8 +152,8 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function LongevityPage() {
-  const [logs, setLogs] = useState<Record<string, DayLog>>({});
-  const [today, setToday] = useState<DayLog>(emptyLog(todayStr()));
+  const [logs, setLogs]     = useState<Record<string, DayLog>>({});
+  const [today, setToday]   = useState<DayLog>(emptyLog(todayStr()));
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -272,417 +163,441 @@ export default function LongevityPage() {
     setMounted(true);
   }, []);
 
-  const persistToday = useCallback(
-    (updated: DayLog) => {
-      const next = { ...logs, [updated.date]: updated };
-      setLogs(next);
-      saveLogs(next);
-    },
-    [logs]
-  );
+  const persistToday = useCallback((updated: DayLog) => {
+    const next = { ...logs, [updated.date]: updated };
+    setLogs(next);
+    saveLogs(next);
+  }, [logs]);
 
-  const updateToday = useCallback(
-    (patch: Partial<DayLog>) => {
-      const updated = { ...today, ...patch };
-      setToday(updated);
-      persistToday(updated);
-    },
-    [today, persistToday]
-  );
+  const updateToday = useCallback((patch: Partial<DayLog>) => {
+    const updated = { ...today, ...patch };
+    setToday(updated);
+    persistToday(updated);
+  }, [today, persistToday]);
 
   const allLogs = { ...logs, [today.date]: today };
-  const { score, fastingDays, zone2Total, strengthSessions, avgSleep, avgHRV, daysHRVMet, pillars } =
-    calcBioScore(allLogs);
+  const { score, fastingDays, zone2Total, strengthSessions, avgHRV, pillars } = calcBioScore(allLogs);
 
-  // HRV overreach warning: HRV < 30 ms
-  const todayHRV = today.hrv !== "" ? Number(today.hrv) : null;
-  const showOverreachWarning = todayHRV !== null && todayHRV < 30;
+  // Derived state
+  const todayHRV        = today.hrv !== "" ? Number(today.hrv) : null;
+  const showOverreach   = todayHRV !== null && todayHRV < 30;
+  const hrvColor        = todayHRV === null ? "#64748b" : todayHRV >= 35 ? "#10b981" : todayHRV >= 30 ? "#f59e0b" : "#ef4444";
 
-  // Chart data – last 7 days (per-day contribution proxy)
-  const chartData = getLast7Dates().map((date) => {
-    const log = allLogs[date] ?? emptyLog(date);
-    const d = new Date(date + "T12:00:00");
-    const dayHRV = log.hrv !== "" ? Number(log.hrv) : 0;
-    const dayScore = Math.round(
-      (log.fasting ? 1 / 7 : 0) * 100 * 0.3 +
-      Math.min(dayHRV / 35, 1) * 100 * 0.25 +
-      Math.min(log.zone2Minutes / 150, 1) * 100 * 0.25 +
-      (log.strengthDone ? 0.5 : 0) * 100 * 0.2
-    );
-    return { day: DAYS_HE[d.getDay()], score: dayScore };
-  });
+  const activityType: ActivityType =
+    today.strengthDone ? "strength" : today.zone2Minutes > 0 ? "zone2" : "rest";
 
-  const scoreColor = score >= 75 ? "#00E5CC" : score >= 50 ? "#FFD60A" : "#FF5252";
-  const statusLabel = score >= 75 ? "מיטבי" : score >= 50 ? "בנייה" : "התחלה";
+  const setActivity = (type: ActivityType) => {
+    if (type === "rest")     updateToday({ strengthDone: false, zone2Minutes: 0 });
+    if (type === "zone2")    updateToday({ strengthDone: false });
+    if (type === "strength") updateToday({ strengthDone: true, zone2Minutes: 0 });
+  };
+
+  const scoreColor  = score >= 75 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
+  const statusLabel = score >= 75 ? "מצב מיטבי" : score >= 50 ? "בבנייה" : "התחלה";
+
+  const dailyTip  = BIOHACK_TIPS[new Date().getDay()];
+
+  const chartData = getLast7Dates().map((date) => ({
+    day:     DAYS_HE[new Date(date + "T12:00:00").getDay()],
+    score:   dayScore(allLogs[date] ?? emptyLog(date)),
+    isToday: date === todayStr(),
+  }));
+
+  const sleepColor = today.sleepQuality >= 8 ? "#10b981" : today.sleepQuality >= 6 ? "#f59e0b" : "#ef4444";
 
   if (!mounted) {
     return (
-      <main className="min-h-dvh flex items-center justify-center bg-slate-950">
-        <div className="w-8 h-8 rounded-full border-2 border-teal-400 border-t-transparent animate-spin" />
+      <main className="min-h-dvh flex items-center justify-center bg-black">
+        <div className="w-6 h-6 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
       </main>
     );
   }
 
   return (
-    <main className="min-h-dvh pb-16 text-white bg-slate-950" dir="rtl">
-      {/* ── Header ── */}
+    <main className="min-h-dvh bg-black text-white" dir="rtl">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div
-        className="sticky top-0 z-20 px-4 py-4 flex items-center justify-between gap-3"
-        style={{
-          background: "rgba(2,6,23,0.92)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
+        className="sticky top-0 z-20 flex items-center justify-between px-4 py-3"
+        style={{ background: "rgba(0,0,0,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
       >
-        {/* In RTL flex, first element appears on the RIGHT */}
-        <Link href="/" className="text-slate-400 hover:text-white transition-colors">
-          <ChevronRight size={20} />
-        </Link>
-        <div className="flex-1 text-center">
-          <h1 className="text-base font-bold text-white leading-tight">מטב-אופטימייזר ביולוגי</h1>
-          <p className="text-xs text-slate-500">
-            פרוטוקול Attia × Huberman — שבוע {Math.ceil(new Date().getDate() / 7)}
+        <div>
+          <p className="text-xs font-black tracking-[0.2em] text-slate-400 uppercase">Bio-Optimizer</p>
+          <p className="text-xs text-slate-700 mt-0.5">
+            {new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}
           </p>
         </div>
-        <span
-          className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
-          style={{ color: scoreColor, background: `${scoreColor}18`, border: `1px solid ${scoreColor}40` }}
-        >
-          {statusLabel}
-        </span>
+        <Link href="/" className="p-2 rounded-xl bg-white/5 border border-white/8 text-slate-500 hover:text-slate-300 transition-colors">
+          <ChevronRight size={16} />
+        </Link>
       </div>
 
-      <div className="px-4 pt-5 max-w-2xl mx-auto space-y-5">
+      <div className="px-4 pt-4 pb-8 space-y-3 max-w-lg mx-auto">
 
-        {/* ── Overreach Warning Banner ── */}
-        {showOverreachWarning && (
+        {/* ── Bio-Score Hero ──────────────────────────────────────────────── */}
+        <div
+          className="rounded-3xl p-5"
+          style={{ background: "rgba(15,23,42,0.95)", border: "1px solid rgba(255,255,255,0.05)" }}
+        >
+          {/* Score + pillar breakdown */}
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest mb-2">Bio-Score שבועי</p>
+              <div className="flex items-baseline gap-2">
+                <span
+                  className="text-7xl font-black tabular-nums leading-none"
+                  style={{ color: scoreColor, textShadow: `0 0 40px ${scoreColor}40` }}
+                >
+                  {score}
+                </span>
+                <span className="text-xl text-slate-600 font-light">/100</span>
+              </div>
+              <p className="text-sm font-bold mt-1.5" style={{ color: scoreColor }}>{statusLabel}</p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1 min-w-[110px]">
+              <MiniBar label="תזונה"    pct={pillars.nutrition / 0.3}  color="#f97316" />
+              <MiniBar label="HRV"      pct={pillars.recovery  / 0.25} color="#ec4899" />
+              <MiniBar label="קרדיו"   pct={pillars.cardio    / 0.25} color="#10b981" />
+              <MiniBar label="כוח"     pct={pillars.strength  / 0.2}  color="#8b5cf6" />
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mb-4">
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{ width: `${score}%`, backgroundColor: scoreColor, boxShadow: `0 0 12px ${scoreColor}60` }}
+            />
+          </div>
+
+          {/* 7-day bar sparkline */}
+          <div className="h-14">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} barSize={20} margin={{ top: 0, right: 0, left: 0, bottom: 0 }} barCategoryGap="25%">
+                <XAxis dataKey="day" tick={{ fill: "#334155", fontSize: 9 }} axisLine={false} tickLine={false} />
+                <Bar dataKey="score" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={
+                        entry.isToday
+                          ? scoreColor
+                          : entry.score >= 65
+                          ? "rgba(16,185,129,0.25)"
+                          : "rgba(255,255,255,0.05)"
+                      }
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ── Overreach Banner ────────────────────────────────────────────── */}
+        {showOverreach && (
           <div
-            className="rounded-2xl p-4 flex items-start gap-3"
-            style={{ background: "rgba(239,68,68,0.12)", border: "2px solid rgba(239,68,68,0.45)" }}
+            className="rounded-2xl px-4 py-3 flex items-center gap-3"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.35)" }}
           >
-            <AlertTriangle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-200 leading-relaxed">
-              ⚠️ <strong className="text-red-300">המערכת בדריכות יתר (Overreach).</strong>{" "}
-              מומלץ להימנע מאימון עז ולבצע רק פעילות שיקום (Zone 2 קל).
+            <span className="text-base">⚠️</span>
+            <p className="text-sm font-semibold text-red-300">
+              דריכות יתר: היום <span className="text-red-400 font-black">מנוחה בלבד.</span>
             </p>
           </div>
         )}
 
-        {/* ── Score + Chart ── */}
-        <section
-          className="rounded-3xl p-6 flex flex-col items-center gap-4"
-          style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <ScoreCircle score={score} />
-          <p className="text-xs text-slate-500 text-center max-w-xs">
-            ציון מורכב: תזונה (30%) · התאוששות HRV (25%) · קרדיו (25%) · כוח (20%).
-          </p>
-          <div className="w-full h-24">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={scoreColor} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={scoreColor} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="day" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="score" stroke={scoreColor} strokeWidth={2} fill="url(#scoreGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
+        {/* ── Row: Nutrition + Recovery ───────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-3">
 
-        {/* ── Pillar Cards ── */}
-        <section>
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
-            עמודי התווך השבועיים
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <PillarCard
-              icon={<Flame size={16} style={{ color: "#FF6B35" }} />}
-              title="תזונה"
-              value={`${fastingDays}/7`}
-              target="7/7 ימים עד 19:00"
-              unit="ימים"
-              color="#FF6B35"
-              score={pillars.nutrition / 0.3}
-            />
-            <PillarCard
-              icon={<Dumbbell size={16} style={{ color: "#A78BFA" }} />}
-              title="כוח"
-              value={`${strengthSessions}/2`}
-              target="2 אימונים/שבוע"
-              unit="אימונים"
-              color="#A78BFA"
-              score={pillars.strength / 0.2}
-            />
-            <PillarCard
-              icon={<Activity size={16} style={{ color: "#00E5CC" }} />}
-              title="קרדיו"
-              value={`${zone2Total}/150`}
-              target="150 דק׳ Zone 2"
-              unit="דק׳"
-              color="#00E5CC"
-              score={pillars.cardio / 0.25}
-            />
-            <PillarCard
-              icon={<Heart size={16} style={{ color: "#F472B6" }} />}
-              title="התאוששות"
-              value={avgHRV > 0 ? `${avgHRV}` : "—"}
-              target="HRV ≥ 35ms"
-              unit="ms"
-              color="#F472B6"
-              score={pillars.recovery / 0.25}
-            />
-          </div>
-        </section>
-
-        {/* ── Weekly Cumulative Stats ── */}
-        <section
-          className="rounded-3xl p-5"
-          style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={14} className="text-teal-400" />
-            <h2 className="text-sm font-bold text-white">סטטיסטיקה שבועית מצטברת</h2>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <StatBox label="דק׳ קרדיו" value={String(zone2Total)} color="#00E5CC" target="יעד 150" />
-            <StatBox label="אימוני כוח" value={String(strengthSessions)} color="#A78BFA" target="יעד 2" />
-            <StatBox label="ימי 19:00" value={String(fastingDays)} color="#FF6B35" target="יעד 7" />
-            <StatBox label="HRV ממוצע" value={avgHRV > 0 ? `${avgHRV}ms` : "—"} color="#F472B6" target="יעד 35ms" />
-            <StatBox label="ימי HRV≥35" value={String(daysHRVMet)} color="#F472B6" target="מתוך 7" />
-            <StatBox label="שינה ממוצעת" value={avgSleep > 0 ? String(avgSleep) : "—"} color="#60A5FA" target="מתוך 10" />
-          </div>
-        </section>
-
-        {/* ── Daily Input ── */}
-        <section
-          className="rounded-3xl p-5 space-y-5"
-          style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-teal-400" />
-            <h2 className="text-sm font-bold text-white">
-              יומן היום —{" "}
-              <span className="text-slate-400 font-normal">
-                {new Date().toLocaleDateString("he-IL", { weekday: "short", month: "short", day: "numeric" })}
-              </span>
-            </h2>
-          </div>
-
-          {/* Fasting toggle — 19:00 Rule */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white">חלון הצום</p>
-              <p className="text-xs text-slate-500">
-                סיימתי לאכול ב-19:00 ({fastingDays}/7 השבוע)
-              </p>
+          {/* TILE: תזונה */}
+          <div
+            className="rounded-2xl p-4 flex flex-col"
+            style={{ background: "rgba(15,23,42,0.95)", border: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <div className="flex items-center gap-1.5 mb-3">
+              <Flame size={12} className="text-orange-500" />
+              <span className="text-xs font-black text-slate-400 uppercase tracking-wider">תזונה</span>
+              <span className="text-xs text-slate-700 mr-auto">30%</span>
             </div>
-            <Toggle checked={today.fasting} onChange={() => updateToday({ fasting: !today.fasting })} />
+
+            {/* Big tap target */}
+            <button
+              onClick={() => updateToday({ fasting: !today.fasting })}
+              className="flex-1 min-h-[80px] rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-200 active:scale-95 border"
+              style={
+                today.fasting
+                  ? { background: "rgba(16,185,129,0.12)", borderColor: "rgba(16,185,129,0.4)" }
+                  : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }
+              }
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                style={
+                  today.fasting
+                    ? { background: "#10b981", boxShadow: "0 0 16px rgba(16,185,129,0.5)" }
+                    : { background: "rgba(255,255,255,0.07)" }
+                }
+              >
+                {today.fasting
+                  ? <Check size={18} color="#000" strokeWidth={3} />
+                  : <X size={16} className="text-slate-600" />
+                }
+              </div>
+              <p className="text-xs text-center leading-snug px-1" style={{ color: today.fasting ? "#10b981" : "#475569" }}>
+                סגרתי מטבח<br />ב-19:00
+              </p>
+            </button>
+
+            <div className="flex items-center justify-between mt-2.5">
+              <StatusBadge done={today.fasting} />
+              <span className="text-xs text-slate-600 tabular-nums">{fastingDays}/7</span>
+            </div>
           </div>
 
-          <div className="h-px bg-white/5" />
+          {/* TILE: התאוששות */}
+          <div
+            className="rounded-2xl p-4 flex flex-col"
+            style={{ background: "rgba(15,23,42,0.95)", border: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <div className="flex items-center gap-1.5 mb-3">
+              <Heart size={12} className="text-pink-500" />
+              <span className="text-xs font-black text-slate-400 uppercase tracking-wider">HRV</span>
+              <span className="text-xs text-slate-700 mr-auto">25%</span>
+            </div>
 
-          {/* Bio-metrics */}
-          <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
-              מדדים ביולוגיים — גארמין
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {/* HRV */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-slate-500 flex items-center gap-1">
-                  <Heart size={11} className="text-rose-400" /> HRV
-                </label>
+            <div className="space-y-2 flex-1">
+              <div>
+                <p className="text-xs text-slate-600 mb-1.5">HRV (ms)</p>
                 <input
                   type="number"
-                  placeholder="ms"
+                  inputMode="numeric"
+                  placeholder="—"
                   min={0}
                   max={300}
                   value={today.hrv}
                   onChange={(e) =>
                     updateToday({ hrv: e.target.value === "" ? "" : Number(e.target.value) })
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-teal-500/50 text-center tabular-nums"
+                  className="w-full rounded-xl px-2 py-2.5 text-center text-xl font-black tabular-nums focus:outline-none transition-colors"
+                  style={{
+                    background: showOverreach
+                      ? "rgba(239,68,68,0.12)"
+                      : todayHRV !== null && todayHRV >= 35
+                      ? "rgba(16,185,129,0.12)"
+                      : "rgba(255,255,255,0.05)",
+                    border: `1px solid ${showOverreach ? "rgba(239,68,68,0.4)" : todayHRV !== null && todayHRV >= 35 ? "rgba(16,185,129,0.35)" : "rgba(255,255,255,0.08)"}`,
+                    color: hrvColor,
+                  }}
                 />
                 {todayHRV !== null && (
-                  <p
-                    className={`text-xs text-center font-semibold ${
-                      todayHRV >= 35 ? "text-teal-400" : todayHRV >= 30 ? "text-yellow-400" : "text-red-400"
-                    }`}
-                  >
-                    {todayHRV >= 35 ? "✓ יעד" : todayHRV >= 30 ? "⚡ גבולי" : "⚠ נמוך"}
+                  <p className="text-xs text-center mt-1 font-semibold" style={{ color: hrvColor }}>
+                    {todayHRV >= 35 ? "✓ יעד הושג" : todayHRV >= 30 ? "⚡ גבולי" : "⚠ נמוך"}
                   </p>
                 )}
               </div>
-              {/* RHR */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-slate-500 flex items-center gap-1">
-                  <Activity size={11} className="text-amber-400" /> RHR
-                </label>
+              <div>
+                <p className="text-xs text-slate-600 mb-1.5">RHR (bpm)</p>
                 <input
                   type="number"
-                  placeholder="bpm"
+                  inputMode="numeric"
+                  placeholder="—"
                   min={30}
                   max={120}
                   value={today.rhr}
                   onChange={(e) =>
                     updateToday({ rhr: e.target.value === "" ? "" : Number(e.target.value) })
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-teal-500/50 text-center tabular-nums"
+                  className="w-full bg-white/5 border border-white/8 rounded-xl px-2 py-2.5 text-center text-lg font-bold text-slate-300 tabular-nums focus:outline-none"
                 />
               </div>
-              {/* Sleep score */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-slate-500 flex items-center gap-1">
-                  <Moon size={11} className="text-blue-400" /> שינה
-                </label>
-                <div className="relative flex items-center justify-center bg-white/5 border border-white/10 rounded-xl px-3 py-2.5">
-                  <span className="text-sm font-bold text-white tabular-nums">{today.sleepQuality}</span>
-                  <span className="text-xs text-slate-500 ms-0.5">/10</span>
-                </div>
-              </div>
             </div>
-            {/* Sleep slider — forced LTR so browser renders consistently */}
-            <div className="mt-3" dir="ltr">
-              <input
-                type="range"
-                min={1}
-                max={10}
-                step={1}
-                value={today.sleepQuality}
-                onChange={(e) => updateToday({ sleepQuality: Number(e.target.value) })}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, #60A5FA ${((today.sleepQuality - 1) / 9) * 100}%, rgba(255,255,255,0.08) ${((today.sleepQuality - 1) / 9) * 100}%)`,
-                }}
-              />
-              <div className="flex justify-between text-xs text-slate-600 mt-1">
-                <span>גרוע</span>
-                <span>מיטבי</span>
-              </div>
+
+            <div className="mt-2.5">
+              <StatusBadge done={today.hrv !== ""} />
             </div>
           </div>
+        </div>
 
-          <div className="h-px bg-white/5" />
+        {/* ── TILE: פעילות ────────────────────────────────────────────────── */}
+        <div
+          className="rounded-2xl p-4"
+          style={{ background: "rgba(15,23,42,0.95)", border: "1px solid rgba(255,255,255,0.05)" }}
+        >
+          <div className="flex items-center gap-1.5 mb-4">
+            <Activity size={12} className="text-emerald-500" />
+            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">פעילות</span>
+            <span className="text-xs text-slate-700 mr-auto">קרדיו 25% · כוח 20%</span>
+            <StatusBadge done={today.zone2Minutes > 0 || today.strengthDone} />
+          </div>
 
-          {/* Workout log */}
-          <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
-              יומן אימון
-            </p>
-
-            {/* Zone 2 */}
-            <div className="flex items-center justify-between mb-4 gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">קרדיו Zone 2</p>
-                <p className="text-xs text-slate-500">
-                  {today.zone2Minutes} דק׳ היום · {zone2Total} / 150 דק׳ השבוע
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Activity radio buttons */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {(
+              [
+                { type: "rest"     as ActivityType, label: "מנוחה",    icon: <Moon size={15} />,     color: "#64748b" },
+                { type: "zone2"    as ActivityType, label: "Zone 2",   icon: <Activity size={15} />,  color: "#10b981" },
+                { type: "strength" as ActivityType, label: "כוח",     icon: <Dumbbell size={15} />,  color: "#8b5cf6" },
+              ] as const
+            ).map(({ type, label, icon, color }) => {
+              const active = activityType === type;
+              return (
                 <button
-                  onClick={() => updateToday({ zone2Minutes: Math.max(0, today.zone2Minutes - 10) })}
-                  className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-colors active:scale-95"
+                  key={type}
+                  onClick={() => setActivity(type)}
+                  className="flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all duration-200 active:scale-95"
+                  style={
+                    active
+                      ? { background: `${color}18`, borderColor: `${color}45`, color }
+                      : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)", color: "#334155" }
+                  }
                 >
-                  <Minus size={14} />
+                  {icon}
+                  <span className="text-xs font-bold">{label}</span>
+                  {active && (
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                  )}
                 </button>
-                <span className="w-12 text-center text-sm font-bold text-white tabular-nums">
+              );
+            })}
+          </div>
+
+          {/* Zone 2 minutes — only when zone2 is selected */}
+          {activityType === "zone2" && (
+            <div
+              className="rounded-xl p-3 space-y-3"
+              style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)" }}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500">דקות אירובי</p>
+                <p className="text-xs text-slate-600 tabular-nums">{zone2Total} / 150 השבוע</p>
+              </div>
+
+              {/* +/- stepper */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => updateToday({ zone2Minutes: Math.max(0, today.zone2Minutes - 15) })}
+                  className="flex-1 py-3 rounded-xl text-xl font-black text-slate-400 border border-white/8 bg-white/5 active:scale-95 transition-all"
+                >
+                  −
+                </button>
+                <span className="w-20 text-center text-3xl font-black text-emerald-400 tabular-nums">
                   {today.zone2Minutes}
                 </span>
                 <button
-                  onClick={() => updateToday({ zone2Minutes: today.zone2Minutes + 10 })}
-                  className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 hover:bg-teal-500/20 transition-colors active:scale-95"
+                  onClick={() => updateToday({ zone2Minutes: today.zone2Minutes + 15 })}
+                  className="flex-1 py-3 rounded-xl text-xl font-black text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 active:scale-95 transition-all"
+                  style={{ boxShadow: "0 0 16px rgba(16,185,129,0.15)" }}
                 >
-                  <Plus size={14} />
+                  +
                 </button>
               </div>
-            </div>
 
-            {/* Strength training */}
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">אימון כוח</p>
+              {/* Quick-set chips */}
+              <div className="flex gap-2">
+                {[30, 45, 60, 90].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => updateToday({ zone2Minutes: m })}
+                    className="flex-1 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border"
+                    style={
+                      today.zone2Minutes === m
+                        ? { background: "rgba(16,185,129,0.2)", borderColor: "rgba(16,185,129,0.5)", color: "#10b981" }
+                        : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)", color: "#475569" }
+                    }
+                  >
+                    {m}′
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strength confirmation */}
+          {activityType === "strength" && (
+            <div
+              className="rounded-xl p-3 flex items-center gap-3"
+              style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}
+            >
+              <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center">
+                <Check size={16} className="text-violet-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-violet-300">אימון כוח נרשם</p>
                 <p className="text-xs text-slate-500">{strengthSessions} / 2 אימונים השבוע</p>
               </div>
-              <button
-                onClick={() => updateToday({ strengthDone: !today.strengthDone })}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 flex-shrink-0"
-                style={{
-                  background: today.strengthDone ? "rgba(167,139,250,0.2)" : "rgba(255,255,255,0.05)",
-                  border: today.strengthDone ? "1px solid rgba(167,139,250,0.5)" : "1px solid rgba(255,255,255,0.1)",
-                  color: today.strengthDone ? "#A78BFA" : "#64748B",
-                }}
-              >
-                <Dumbbell size={14} />
-                {today.strengthDone ? "בוצע ✓" : "תעד אימון"}
-              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── TILE: שינה ─────────────────────────────────────────────────── */}
+        <div
+          className="rounded-2xl p-4"
+          style={{ background: "rgba(15,23,42,0.95)", border: "1px solid rgba(255,255,255,0.05)" }}
+        >
+          <div className="flex items-center gap-1.5 mb-4">
+            <Moon size={12} className="text-blue-400" />
+            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">שינה</span>
+            <div className="mr-auto flex items-center gap-2">
+              <span className="text-2xl font-black tabular-nums" style={{ color: sleepColor }}>
+                {today.sleepQuality}
+              </span>
+              <span className="text-xs text-slate-600">/10</span>
             </div>
           </div>
-        </section>
 
-        {/* ── 7-Day History ── */}
-        <section>
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Clock size={12} /> יומן פעילות — 7 ימים אחרונים
-          </h2>
-          <div className="space-y-2">
-            {getLast7Dates()
-              .slice()
-              .reverse()
-              .map((date) => {
-                const log = allLogs[date] ?? emptyLog(date);
-                const isToday = date === todayStr();
-                const d = new Date(date + "T12:00:00");
-                const label = isToday
-                  ? "היום"
-                  : d.toLocaleDateString("he-IL", { weekday: "short", month: "short", day: "numeric" });
-                const logHRV = log.hrv !== "" ? Number(log.hrv) : null;
-
-                return (
-                  <div
-                    key={date}
-                    className="rounded-2xl px-4 py-3 flex items-center gap-3"
-                    style={{
-                      background: "rgba(15,23,42,0.7)",
-                      border: `1px solid ${isToday ? "rgba(0,229,204,0.3)" : "rgba(255,255,255,0.06)"}`,
-                    }}
-                  >
-                    <div className="w-14 flex-shrink-0 text-right">
-                      <p className="text-xs font-semibold" style={{ color: isToday ? "#00E5CC" : "#94A3B8" }}>
-                        {label}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-1 flex-wrap">
-                      <Dot active={log.fasting} color="#FF6B35" label="19:00" />
-                      <Dot active={log.zone2Minutes > 0} color="#00E5CC" label={log.zone2Minutes > 0 ? `${log.zone2Minutes}ד׳` : "Z2"} />
-                      <Dot active={log.strengthDone} color="#A78BFA" label="כוח" />
-                      <Dot active={logHRV !== null && logHRV >= 35} color="#F472B6" label={logHRV !== null ? `${logHRV}ms` : "HRV"} />
-                    </div>
-                    <div className="flex-shrink-0 text-left" dir="ltr">
-                      {logHRV !== null && (
-                        <p className={`text-xs tabular-nums font-medium ${logHRV >= 35 ? "text-teal-400" : logHRV >= 30 ? "text-yellow-400" : "text-red-400"}`}>
-                          HRV {logHRV}
-                        </p>
-                      )}
-                      {log.rhr !== "" && (
-                        <p className="text-xs text-amber-400 tabular-nums">{log.rhr} bpm</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Slider wrapper forced LTR for consistent rendering */}
+          <div dir="ltr">
+            <input
+              type="range"
+              min={1}
+              max={10}
+              step={1}
+              value={today.sleepQuality}
+              onChange={(e) => updateToday({ sleepQuality: Number(e.target.value) })}
+              className="w-full h-2 rounded-full appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, ${sleepColor} ${((today.sleepQuality - 1) / 9) * 100}%, rgba(255,255,255,0.05) ${((today.sleepQuality - 1) / 9) * 100}%)`,
+              }}
+            />
+            <div className="flex justify-between text-xs text-slate-700 mt-2">
+              <span>גרועה (1)</span>
+              <span>מיטבית (10)</span>
+            </div>
           </div>
-        </section>
 
-        {/* ── Footer ── */}
-        <p className="text-center text-xs text-slate-700 pb-4">
-          פרוטוקול: Attia Outlive × Huberman Lab — עקוב. מטב. חיה יותר.
-        </p>
+          {/* Quick-set chips */}
+          <div className="flex gap-2 mt-3">
+            {[5, 6, 7, 8, 9, 10].map((v) => (
+              <button
+                key={v}
+                onClick={() => updateToday({ sleepQuality: v })}
+                className="flex-1 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border"
+                style={
+                  today.sleepQuality === v
+                    ? { background: `${sleepColor}25`, borderColor: `${sleepColor}50`, color: sleepColor }
+                    : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)", color: "#475569" }
+                }
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Daily Bio-Hack Tip ──────────────────────────────────────────── */}
+        <div
+          className="rounded-2xl px-4 py-4"
+          style={{ background: "rgba(16,185,129,0.04)", border: "1px solid rgba(16,185,129,0.12)" }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Zap size={12} className="text-emerald-600" />
+            <p className="text-xs font-black text-emerald-700 uppercase tracking-widest">טיפ ביו-האקינג יומי</p>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">{dailyTip}</p>
+        </div>
+
       </div>
     </main>
   );
