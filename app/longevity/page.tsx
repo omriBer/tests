@@ -13,16 +13,27 @@ import {
   X,
   Zap,
   RefreshCw,
+  Droplets,
+  Clock,
+  Ban,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DayLog = {
   date: string;
-  fasting: boolean;
+  // Nutrition
+  fasting: boolean;         // סגירת מטבח 19:00       +10 pts
+  waterDone: boolean;       // 3.5L מים               +8 pts
+  noSugarBreakfast: boolean; // ללא סוכר — בוקר       +4 pts
+  noSugarLunch: boolean;    // ללא סוכר — צהרים        +4 pts
+  noSugarDinner: boolean;   // ללא סוכר — ערב          +4 pts
+  eatingWindow: boolean;    // שמירת חלון אכילה        +5 pts
+  // Recovery
   hrv: number | "";
   rhr: number | "";
   sleepQuality: number;
+  // Activity
   zone2Minutes: number;
   strengthDone: boolean;
 };
@@ -54,7 +65,14 @@ function getLast7Dates(): string[] {
 }
 
 function emptyLog(date: string): DayLog {
-  return { date, fasting: false, hrv: "", rhr: "", sleepQuality: 7, zone2Minutes: 0, strengthDone: false };
+  return {
+    date,
+    fasting: false, waterDone: false,
+    noSugarBreakfast: false, noSugarLunch: false, noSugarDinner: false,
+    eatingWindow: false,
+    hrv: "", rhr: "", sleepQuality: 7,
+    zone2Minutes: 0, strengthDone: false,
+  };
 }
 
 function loadLogs(): Record<string, DayLog> {
@@ -69,45 +87,52 @@ function saveLogs(logs: Record<string, DayLog>) {
 }
 
 // ─── Score Engine ─────────────────────────────────────────────────────────────
-// Returns individual point contributions so UI can show them live.
-//
-//  תזונה   30 pts  — today's 19:00 fasting
-//  HRV     25 pts  — >35 full | 30-35 linear partial | <30 zero + warning
+// Total: 100 pts
+//  תזונה   35 pts  — fasting(10) + water(8) + no-sugar×3(4+4+4=12) + window(5)
+//  HRV     25 pts  — ≥35 full | 30-35 linear partial | <30 zero + warning
 //  Zone 2  25 pts  — weekly progress toward 150 min
-//  כוח     20 pts  — 10 pts per session, max 2/week
+//  כוח     15 pts  — 7.5 pts per session, max 2/week
 
 function calcPoints(today: DayLog, allLogs: Record<string, DayLog>) {
-  // Nutrition
-  const nutritionPts = today.fasting ? 30 : 0;
+  // ── Nutrition (35 pts) ──────────────────────────────────────────────────────
+  const fastingPts       = today.fasting           ? 10 : 0;
+  const waterPts         = today.waterDone         ? 8  : 0;
+  const noSugarBreakPts  = today.noSugarBreakfast  ? 4  : 0;
+  const noSugarLunchPts  = today.noSugarLunch      ? 4  : 0;
+  const noSugarDinnerPts = today.noSugarDinner     ? 4  : 0;
+  const eatingWindowPts  = today.eatingWindow      ? 5  : 0;
+  const nutritionPts = fastingPts + waterPts + noSugarBreakPts + noSugarLunchPts + noSugarDinnerPts + eatingWindowPts;
+  const noSugarTotal = noSugarBreakPts + noSugarLunchPts + noSugarDinnerPts;
 
-  // HRV
+  // ── HRV (25 pts) ─────────────────────────────────────────────────────────────
   const hrv = today.hrv !== "" ? Number(today.hrv) : null;
   let hrvPts = 0;
   let hrvPartial = false;
   let hrvWarning = false;
   if (hrv !== null) {
-    if (hrv >= 35)       { hrvPts = 25; }
-    else if (hrv >= 30)  { hrvPts = Math.round(((hrv - 30) / 5) * 25); hrvPartial = true; }
-    else                 { hrvPts = 0; hrvWarning = true; }
+    if (hrv >= 35)      { hrvPts = 25; }
+    else if (hrv >= 30) { hrvPts = Math.round(((hrv - 30) / 5) * 25); hrvPartial = true; }
+    else                { hrvPts = 0; hrvWarning = true; }
   }
 
-  // Zone 2 — weekly total including today
+  // ── Zone 2 (25 pts) — weekly total ───────────────────────────────────────────
   const zone2Total = getLast7Dates().reduce((s, d) => s + (allLogs[d]?.zone2Minutes ?? 0), 0);
   const zone2Pct   = Math.min(zone2Total / 150, 1);
   const zone2Pts   = Math.round(zone2Pct * 25);
 
-  // Strength — weekly sessions including today
+  // ── Strength (15 pts) — weekly sessions ──────────────────────────────────────
   const strengthSessions = getLast7Dates().filter((d) => allLogs[d]?.strengthDone).length;
-  const strengthPts = Math.min(strengthSessions, 2) * 10;
+  const strengthPts = Math.min(strengthSessions, 2) * 7.5;
 
-  const total = nutritionPts + hrvPts + zone2Pts + strengthPts;
+  const total = Math.round(nutritionPts + hrvPts + zone2Pts + strengthPts);
 
   return {
     total,
-    nutritionPts,
+    nutritionPts, fastingPts, waterPts, noSugarTotal, eatingWindowPts,
+    noSugarBreakPts, noSugarLunchPts, noSugarDinnerPts,
     hrvPts, hrvPartial, hrvWarning,
     zone2Pts, zone2Total, zone2Pct,
-    strengthPts, strengthSessions,
+    strengthPts: Math.round(strengthPts), strengthSessions,
   };
 }
 
@@ -218,8 +243,12 @@ export default function LongevityPage() {
   // Always include today in allLogs for zone2 / strength weekly sums
   const allLogs = { ...logs, [today.date]: today };
 
-  const { total, nutritionPts, hrvPts, hrvPartial, hrvWarning, zone2Pts, zone2Total, zone2Pct, strengthPts, strengthSessions } =
-    calcPoints(today, allLogs);
+  const {
+    total, nutritionPts, fastingPts, waterPts, noSugarTotal, eatingWindowPts,
+    hrvPts, hrvPartial, hrvWarning,
+    zone2Pts, zone2Total, zone2Pct,
+    strengthPts, strengthSessions,
+  } = calcPoints(today, allLogs);
 
   const status  = getStatus(total);
   const todayHRV = today.hrv !== "" ? Number(today.hrv) : null;
@@ -297,10 +326,10 @@ export default function LongevityPage() {
             {/* Point breakdown pills — right side */}
             <div className="flex flex-col gap-1.5 pb-1">
               {[
-                { label: "תזונה",  pts: nutritionPts, max: 30, color: "#f97316" },
+                { label: "תזונה",  pts: nutritionPts, max: 35, color: "#f97316" },
                 { label: "HRV",    pts: hrvPts,       max: 25, color: "#ec4899" },
                 { label: "קרדיו", pts: zone2Pts,     max: 25, color: "#10b981" },
-                { label: "כוח",   pts: strengthPts,  max: 20, color: "#8b5cf6" },
+                { label: "כוח",   pts: strengthPts,  max: 15, color: "#8b5cf6" },
               ].map(({ label, pts, max, color }) => (
                 <div key={label} className="flex items-center gap-2 justify-end">
                   <span className="text-xs text-slate-600">{label}</span>
@@ -321,10 +350,10 @@ export default function LongevityPage() {
           {/* Segmented progress bar */}
           <div className="flex gap-1 mb-3">
             {[
-              { pts: nutritionPts, max: 30, color: "#f97316" },
+              { pts: nutritionPts, max: 35, color: "#f97316" },
               { pts: hrvPts,       max: 25, color: "#ec4899" },
               { pts: zone2Pts,     max: 25, color: "#10b981" },
-              { pts: strengthPts,  max: 20, color: "#8b5cf6" },
+              { pts: strengthPts,  max: 15, color: "#8b5cf6" },
             ].map(({ pts, max, color }, i) => (
               <div
                 key={i}
@@ -372,46 +401,127 @@ export default function LongevityPage() {
           </div>
         )}
 
-        {/* ── TILE: תזונה ─────────────────────────────────────────────────── */}
+        {/* ── TILE: תזונה (expanded) ──────────────────────────────────────── */}
         <div
-          className="rounded-2xl p-4"
+          className="rounded-2xl p-4 space-y-2.5"
           style={{ background: "rgba(15,23,42,0.95)", border: "1px solid rgba(255,255,255,0.05)" }}
         >
           <SectionHeader
             icon={<Flame size={14} className="text-orange-500" />}
-            label="תזונה — סגירת מטבח"
+            label="תזונה"
             pts={nutritionPts}
-            max={30}
+            max={35}
           />
 
-          <button
-            onClick={() => updateToday({ fasting: !today.fasting })}
-            className="mt-3 w-full rounded-2xl py-4 flex items-center justify-between px-4 transition-all duration-200 active:scale-[0.98] border"
-            style={
-              today.fasting
-                ? { background: "rgba(16,185,129,0.12)", borderColor: "rgba(16,185,129,0.4)" }
-                : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }
-            }
-          >
-            <span
-              className="text-base font-bold transition-colors"
-              style={{ color: today.fasting ? "#10b981" : "#475569" }}
-            >
-              סגרתי מטבח ב-19:00
-            </span>
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+          {/* Row helper */}
+          {(
+            [
+              {
+                key: "fasting" as const,
+                icon: <Flame size={13} className="text-orange-400" />,
+                label: "סגרתי מטבח ב-19:00",
+                pts: fastingPts, max: 10,
+                active: today.fasting,
+                onToggle: () => updateToday({ fasting: !today.fasting }),
+                color: "#f97316",
+              },
+              {
+                key: "waterDone" as const,
+                icon: <Droplets size={13} className="text-cyan-400" />,
+                label: "שתיתי 3.5 ליטר מים",
+                pts: waterPts, max: 8,
+                active: today.waterDone,
+                onToggle: () => updateToday({ waterDone: !today.waterDone }),
+                color: "#22d3ee",
+              },
+              {
+                key: "eatingWindow" as const,
+                icon: <Clock size={13} className="text-amber-400" />,
+                label: "שמרתי על חלון אכילה",
+                pts: eatingWindowPts, max: 5,
+                active: today.eatingWindow,
+                onToggle: () => updateToday({ eatingWindow: !today.eatingWindow }),
+                color: "#f59e0b",
+              },
+            ] as const
+          ).map(({ key, icon, label, pts, max, active, onToggle, color }) => (
+            <button
+              key={key}
+              onClick={onToggle}
+              className="w-full rounded-xl py-3 px-3.5 flex items-center justify-between transition-all duration-200 active:scale-[0.98] border"
               style={
-                today.fasting
-                  ? { background: "#10b981", boxShadow: "0 0 16px rgba(16,185,129,0.5)" }
-                  : { background: "rgba(255,255,255,0.07)" }
+                active
+                  ? { background: `${color}15`, borderColor: `${color}40` }
+                  : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }
               }
             >
-              {today.fasting
-                ? <Check size={16} color="#000" strokeWidth={3} />
-                : <X size={14} className="text-slate-600" />}
+              <div className="flex items-center gap-2">
+                {icon}
+                <span className="text-sm font-semibold" style={{ color: active ? color : "#475569" }}>
+                  {label}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs tabular-nums font-black" style={{ color: active ? color : "#1e293b" }}>
+                  +{pts}/{max}
+                </span>
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center transition-all"
+                  style={
+                    active
+                      ? { background: color, boxShadow: `0 0 10px ${color}60` }
+                      : { background: "rgba(255,255,255,0.06)" }
+                  }
+                >
+                  {active
+                    ? <Check size={12} color="#000" strokeWidth={3} />
+                    : <X size={11} className="text-slate-700" />}
+                </div>
+              </div>
+            </button>
+          ))}
+
+          {/* No-sugar row: 3 meal chips */}
+          <div
+            className="rounded-xl p-3 border"
+            style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <Ban size={13} className="text-rose-400" />
+                <span className="text-sm font-semibold text-slate-400">ללא סוכר</span>
+              </div>
+              <span
+                className="text-xs tabular-nums font-black"
+                style={{ color: noSugarTotal === 12 ? "#10b981" : noSugarTotal > 0 ? "#f59e0b" : "#1e293b" }}
+              >
+                +{noSugarTotal}/12
+              </span>
             </div>
-          </button>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { key: "noSugarBreakfast" as const, label: "בוקר",   active: today.noSugarBreakfast, onToggle: () => updateToday({ noSugarBreakfast: !today.noSugarBreakfast }) },
+                  { key: "noSugarLunch"     as const, label: "צהרים",  active: today.noSugarLunch,     onToggle: () => updateToday({ noSugarLunch: !today.noSugarLunch }) },
+                  { key: "noSugarDinner"    as const, label: "ערב",    active: today.noSugarDinner,    onToggle: () => updateToday({ noSugarDinner: !today.noSugarDinner }) },
+                ] as const
+              ).map(({ key, label, active, onToggle }) => (
+                <button
+                  key={key}
+                  onClick={onToggle}
+                  className="py-2.5 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition-all active:scale-95"
+                  style={
+                    active
+                      ? { background: "rgba(244,63,94,0.15)", borderColor: "rgba(244,63,94,0.4)", color: "#fb7185" }
+                      : { background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.07)", color: "#475569" }
+                  }
+                >
+                  <span>{label}</span>
+                  <span className="text-xs opacity-70">{active ? "+4" : "0"}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* ── TILE: HRV ───────────────────────────────────────────────────── */}
@@ -598,13 +708,13 @@ export default function LongevityPage() {
             icon={<Dumbbell size={14} className="text-violet-500" />}
             label="אימון כוח"
             pts={strengthPts}
-            max={20}
+            max={15}
           />
 
           <div className="mt-3 flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-600">
-                {strengthSessions} / 2 אימונים השבוע · 10 נק׳ לאימון
+                {strengthSessions} / 2 אימונים השבוע · 7.5 נק׳ לאימון
               </p>
               {/* Visual session dots */}
               <div className="flex gap-2 mt-2">
